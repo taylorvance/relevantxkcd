@@ -22,7 +22,7 @@ export interface SemanticResult {
 }
 
 export function decodeSemanticIndex(file: SemanticIndexFile): DecodedSemanticIndex {
-  const binary = atob(file.vectors);
+  const binary = decodeBase64(file.vectors);
   const bytes = new Uint8Array(binary.length);
 
   for (let index = 0; index < binary.length; index += 1) {
@@ -36,6 +36,14 @@ export function decodeSemanticIndex(file: SemanticIndexFile): DecodedSemanticInd
     nums: file.nums,
     vectors: new Int8Array(bytes.buffer),
   };
+}
+
+function decodeBase64(value: string): string {
+  if (typeof atob === "function") {
+    return atob(value);
+  }
+
+  return Buffer.from(value, "base64").toString("binary");
 }
 
 export function rankSemantic(

@@ -1,140 +1,129 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import {
-  blendSearchResults,
-  decodeSemanticIndex,
-  rankSemantic,
-  type DecodedSemanticIndex,
-  type SemanticResult,
-} from "./lib/semantic";
-import { embedQuery, loadSemanticIndex } from "./lib/semanticModel";
-import { searchComics } from "./lib/search";
-import type { ComicRecord } from "./lib/types";
+import type { ComicRecord, SearchResult } from "./lib/types";
 
 const RESULT_LIMIT = 24;
 
+interface WorkerResponse {
+  id: number;
+  type: "ready" | "results" | "selected" | "status" | "error";
+  count?: number;
+  results?: SearchResult[];
+  selected?: ComicRecord | null;
+  status?: string;
+  error?: string;
+}
+
 export function App() {
-  const [records, setRecords] = useState<ComicRecord[]>([]);
+  const [comicCount, setComicCount] = useState(0);
   const [query, setQuery] = useState("");
   const [selectedNum, setSelectedNum] = useState<number | null>(null);
+  const [selected, setSelected] = useState<ComicRecord | null>(null);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [copied, setCopied] = useState(false);
   const [semanticEnabled, setSemanticEnabled] = useState(false);
-  const [semanticResults, setSemanticResults] = useState<SemanticResult[]>([]);
   const [semanticStatus, setSemanticStatus] = useState("");
-  const semanticIndexRef = useRef<DecodedSemanticIndex | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const workerRef = useRef<Worker | null>(null);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
-    let cancelled = false;
+    const worker = new Worker(new URL("./searchWorker.ts", import.meta.url), {
+      type: "module",
+    });
 
-    fetch("/search-index.json")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Index request failed: ${response.status}`);
+    workerRef.current = worker;
+
+    worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      const message = event.data;
+
+      if (message.type === "ready") {
+        setComicCount(message.count ?? 0);
+        return;
+      }
+
+      if (message.type === "status") {
+        if (message.id === requestIdRef.current) {
+          setSemanticStatus(message.status ?? "");
         }
+        return;
+      }
 
-        return response.json() as Promise<ComicRecord[]>;
-      })
-      .then((nextRecords) => {
-        if (cancelled) {
+      if (message.type === "results") {
+        if (message.id !== 0 && message.id !== requestIdRef.current) {
           return;
         }
 
-        setRecords(nextRecords);
-        setSelectedNum(nextRecords.at(-1)?.num ?? null);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+        setResults(message.results ?? []);
+        if (message.count !== undefined) {
+          setComicCount(message.count);
+        }
+        setSemanticStatus(message.status ?? "");
+        setIsSearching(false);
+
+        const first = message.results?.[0] ?? null;
+        if (first) {
+          setSelectedNum((current) =>
+            current && message.results?.some((result) => result.num === current)
+              ? current
+              : first.num,
+          );
+        }
+        return;
+      }
+
+      if (message.type === "selected") {
+        setSelected(message.selected ?? null);
+        return;
+      }
+
+      if (message.type === "error") {
+        console.error(message.error);
+        setSemanticStatus(message.error ?? "Search unavailable");
+        setIsSearching(false);
+      }
+    };
 
     return () => {
-      cancelled = true;
+      worker.terminate();
+      workerRef.current = null;
     };
   }, []);
 
-  const lexicalResults = useMemo(() => {
-    if (!query.trim()) {
-      return records
-        .slice()
-        .sort((a, b) => b.num - a.num)
-        .slice(0, RESULT_LIMIT)
-        .map((record) => ({
-          ...record,
-          score: 0,
-          excerpt: record.alt || record.transcript,
-          matchedFields: [],
-        }));
-    }
-
-    return searchComics(records, query, RESULT_LIMIT);
-  }, [query, records]);
-
   useEffect(() => {
-    const trimmedQuery = query.trim();
-
-    if (!semanticEnabled || !trimmedQuery) {
-      setSemanticResults([]);
-      setSemanticStatus("");
+    if (!workerRef.current) {
       return;
     }
 
-    let cancelled = false;
+    const id = requestIdRef.current + 1;
+    requestIdRef.current = id;
+    setIsSearching(Boolean(query.trim()));
 
-    async function runSemanticSearch() {
-      try {
-        if (!semanticIndexRef.current) {
-          setSemanticStatus("Loading semantic index");
-          semanticIndexRef.current = decodeSemanticIndex(await loadSemanticIndex());
-        }
-
-        setSemanticStatus("Embedding query");
-        const embedding = await embedQuery(trimmedQuery);
-
-        if (cancelled || !semanticIndexRef.current) {
-          return;
-        }
-
-        setSemanticResults(rankSemantic(semanticIndexRef.current, embedding, 48));
-        setSemanticStatus("Semantic ready");
-      } catch (error) {
-        console.error(error);
-
-        if (!cancelled) {
-          setSemanticResults([]);
-          setSemanticStatus("Semantic unavailable");
-        }
-      }
-    }
-
-    runSemanticSearch();
+    const timeoutId = window.setTimeout(() => {
+      workerRef.current?.postMessage({
+        id,
+        type: "search",
+        query,
+        semanticEnabled,
+      });
+    }, 90);
 
     return () => {
-      cancelled = true;
+      window.clearTimeout(timeoutId);
     };
   }, [query, semanticEnabled]);
 
-  const results = useMemo(() => {
-    if (!semanticEnabled || !query.trim() || semanticResults.length === 0) {
-      return lexicalResults;
-    }
-
-    return blendSearchResults(records, lexicalResults, semanticResults, RESULT_LIMIT);
-  }, [lexicalResults, query, records, semanticEnabled, semanticResults]);
-
-  const selected =
-    records.find((record) => record.num === selectedNum) ??
-    results[0] ??
-    records.at(-1) ??
-    null;
-
   useEffect(() => {
-    if (results.length === 0) {
+    if (!selectedNum || !workerRef.current) {
       return;
     }
 
-    if (!selected || !results.some((result) => result.num === selected.num)) {
-      setSelectedNum(results[0].num);
-    }
-  }, [results, selected]);
+    workerRef.current.postMessage({
+      id: requestIdRef.current,
+      type: "select",
+      num: selectedNum,
+    });
+  }, [selectedNum]);
 
   async function copySelectedLink() {
     if (!selected) {
@@ -177,7 +166,8 @@ export function App() {
           <span>Semantic</span>
         </label>
         <div className="count" aria-live="polite">
-          {semanticStatus || (records.length ? `${records.length} comics` : "Loading index")}
+          {semanticStatus ||
+            (isSearching ? "Searching" : comicCount ? `${comicCount} comics` : "Loading index")}
         </div>
       </section>
 
@@ -212,6 +202,11 @@ export function App() {
                   <a className="open-link" href={selected.canonicalUrl} target="_blank" rel="noreferrer">
                     Open
                   </a>
+                  {selected.sourceFlags.includes("explainxkcd") ? (
+                    <a className="open-link" href={selected.explainUrl} target="_blank" rel="noreferrer">
+                      Explain
+                    </a>
+                  ) : null}
                 </div>
               </div>
 
@@ -228,8 +223,9 @@ export function App() {
       </section>
 
       <footer className="attribution">
-        xkcd content is by Randall Munroe and licensed under CC BY-NC 2.5. Comic
-        images load from xkcd image URLs.
+        xkcd content is by Randall Munroe and licensed under CC BY-NC 2.5.
+        Search may also use explainxkcd text, licensed under CC BY-SA 3.0, with
+        source links on matched comics. Comic images load from xkcd image URLs.
       </footer>
     </main>
   );
