@@ -39,6 +39,37 @@ If a tested lexical baseline cannot find the right comic often enough, a search
 API, offline embeddings, or a hosted vector database can be revisited with an
 explicit maintenance and deployment tradeoff.
 
+## Development
+
+Install dependencies:
+
+```sh
+npm install
+```
+
+Run tests:
+
+```sh
+npm test
+```
+
+Build the static app:
+
+```sh
+npm run build
+```
+
+Generate the public search index:
+
+```sh
+npm run generate:index
+```
+
+The generator uses `raw_data/xkcd` when the local corpus is present. If the raw
+corpus is absent but `public/search-index.json` already exists, it keeps that
+checked-in public index. If neither exists, it falls back to the committed
+fixture set in `fixtures/xkcd`.
+
 ## Corpus Policy
 
 Do not commit the full raw corpus by default.
@@ -47,7 +78,8 @@ Recommended approach:
 
 - keep `raw_data/` ignored as local source snapshots
 - commit a small fixture set for tests
-- publish only the generated app assets and the minimized public search index
+- commit/publish only the generated app assets and the minimized public search
+  index
 - avoid shipping explainxkcd-derived text in the public index until attribution
   and license handling are implemented deliberately
 

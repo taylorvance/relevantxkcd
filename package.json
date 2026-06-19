@@ -1,0 +1,27 @@
+{
+  "name": "relevant-xkcd",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm run generate:index && vite",
+    "build": "npm run generate:index && tsc -b && vite build",
+    "generate:index": "tsx scripts/build-index.ts",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "typescript": "^5.9.3",
+    "tsx": "^4.21.0",
+    "vite": "^7.2.7",
+    "vitest": "^4.0.15"
+  }
+}

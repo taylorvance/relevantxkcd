@@ -3,3 +3,6 @@ processed_data/
 
 __pycache__/
 .DS_Store
+node_modules/
+dist/
+tsconfig.tsbuildinfo
