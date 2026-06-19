@@ -1,5 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  blendSearchResults,
+  decodeSemanticIndex,
+  rankSemantic,
+  type DecodedSemanticIndex,
+  type SemanticResult,
+} from "./lib/semantic";
+import { embedQuery, loadSemanticIndex } from "./lib/semanticModel";
 import { searchComics } from "./lib/search";
 import type { ComicRecord } from "./lib/types";
 
@@ -10,6 +18,10 @@ export function App() {
   const [query, setQuery] = useState("");
   const [selectedNum, setSelectedNum] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [semanticEnabled, setSemanticEnabled] = useState(false);
+  const [semanticResults, setSemanticResults] = useState<SemanticResult[]>([]);
+  const [semanticStatus, setSemanticStatus] = useState("");
+  const semanticIndexRef = useRef<DecodedSemanticIndex | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +51,7 @@ export function App() {
     };
   }, []);
 
-  const results = useMemo(() => {
+  const lexicalResults = useMemo(() => {
     if (!query.trim()) {
       return records
         .slice()
@@ -55,6 +67,58 @@ export function App() {
 
     return searchComics(records, query, RESULT_LIMIT);
   }, [query, records]);
+
+  useEffect(() => {
+    const trimmedQuery = query.trim();
+
+    if (!semanticEnabled || !trimmedQuery) {
+      setSemanticResults([]);
+      setSemanticStatus("");
+      return;
+    }
+
+    let cancelled = false;
+
+    async function runSemanticSearch() {
+      try {
+        if (!semanticIndexRef.current) {
+          setSemanticStatus("Loading semantic index");
+          semanticIndexRef.current = decodeSemanticIndex(await loadSemanticIndex());
+        }
+
+        setSemanticStatus("Embedding query");
+        const embedding = await embedQuery(trimmedQuery);
+
+        if (cancelled || !semanticIndexRef.current) {
+          return;
+        }
+
+        setSemanticResults(rankSemantic(semanticIndexRef.current, embedding, 48));
+        setSemanticStatus("Semantic ready");
+      } catch (error) {
+        console.error(error);
+
+        if (!cancelled) {
+          setSemanticResults([]);
+          setSemanticStatus("Semantic unavailable");
+        }
+      }
+    }
+
+    runSemanticSearch();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [query, semanticEnabled]);
+
+  const results = useMemo(() => {
+    if (!semanticEnabled || !query.trim() || semanticResults.length === 0) {
+      return lexicalResults;
+    }
+
+    return blendSearchResults(records, lexicalResults, semanticResults, RESULT_LIMIT);
+  }, [lexicalResults, query, records, semanticEnabled, semanticResults]);
 
   const selected =
     records.find((record) => record.num === selectedNum) ??
@@ -104,8 +168,16 @@ export function App() {
           placeholder="standards, password strength, git"
           aria-label="Search xkcd comics"
         />
+        <label className="semantic-toggle">
+          <input
+            checked={semanticEnabled}
+            onChange={(event) => setSemanticEnabled(event.target.checked)}
+            type="checkbox"
+          />
+          <span>Semantic</span>
+        </label>
         <div className="count" aria-live="polite">
-          {records.length ? `${records.length} comics` : "Loading index"}
+          {semanticStatus || (records.length ? `${records.length} comics` : "Loading index")}
         </div>
       </section>
 
