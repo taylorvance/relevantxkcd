@@ -118,7 +118,12 @@ it out of git avoids noisy vendor-data churn and reduces the chance of
 accidentally redistributing source text without the correct attribution/license
 surface.
 
-## License Notes
+## Licensing
+
+Original project code is MIT licensed. See `LICENSE.md`.
+
+This does not relicense third-party content or generated data derived from
+third-party content. See `THIRD_PARTY_NOTICES.md` for the full notice.
 
 xkcd comics and accompanying text are licensed under Creative Commons
 Attribution-NonCommercial 2.5:
@@ -136,6 +141,10 @@ This project should treat license compliance as an implementation requirement,
 not an afterthought. For MVP, the safest public index is based on xkcd-provided
 metadata and links. explainxkcd content can be used locally while the public
 redistribution plan is made explicit.
+
+Because public indexes currently include xkcd-derived and explainxkcd-derived
+fields, public use of the app and repository should remain noncommercial and
+should preserve attribution, source links, and upstream license notices.
 
 ## Reference
 
