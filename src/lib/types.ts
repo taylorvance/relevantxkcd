@@ -12,7 +12,21 @@ export interface XkcdRawComic {
   day?: string;
 }
 
-export type SourceFlag = "xkcd";
+export interface ExplainXkcdRawPage {
+  parse?: {
+    title?: string;
+    pageid?: number;
+    wikitext?: {
+      "*"?: string;
+    };
+  };
+  error?: {
+    code?: string;
+    info?: string;
+  };
+}
+
+export type SourceFlag = "xkcd" | "explainxkcd";
 
 export interface ComicRecord {
   num: number;
@@ -23,7 +37,11 @@ export interface ComicRecord {
   canonicalUrl: string;
   alt: string;
   transcript: string;
-  searchText: string;
+  communityTranscript: string;
+  explanation?: string;
+  explainReferences: string;
+  explainUrl: string;
+  searchText?: string;
   sourceFlags: SourceFlag[];
 }
 

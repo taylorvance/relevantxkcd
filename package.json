@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "npm run generate:index && vite",
     "build": "npm run generate:index && tsc -b && vite build",
+    "corpus:fetch": "tsx scripts/fetch-corpus.ts",
+    "corpus:status": "tsx scripts/corpus-status.ts",
     "generate:index": "tsx scripts/build-index.ts",
     "generate:semantic": "tsx scripts/build-semantic-index.ts",
     "preview": "vite preview",

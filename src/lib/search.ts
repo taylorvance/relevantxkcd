@@ -4,9 +4,15 @@ const FIELD_WEIGHTS = {
   title: 80,
   alt: 24,
   transcript: 14,
+  communityTranscript: 10,
+  explainReferences: 10,
+  explanation: 6,
   phraseTitle: 420,
   phraseAlt: 120,
   phraseTranscript: 70,
+  phraseCommunityTranscript: 54,
+  phraseExplainReferences: 54,
+  phraseExplanation: 38,
 };
 
 export function searchComics(
@@ -55,10 +61,16 @@ function scoreRecord(
     title: normalizeForComparison(record.title),
     alt: normalizeForComparison(record.alt),
     transcript: normalizeForComparison(record.transcript),
+    communityTranscript: normalizeForComparison(record.communityTranscript),
+    explainReferences: normalizeForComparison(record.explainReferences ?? ""),
+    explanation: normalizeForComparison(record.explanation ?? ""),
   };
   const titleTokens = new Set(tokenize(record.title));
   const altTokens = new Set(tokenize(record.alt));
   const transcriptTokens = new Set(tokenize(record.transcript));
+  const communityTranscriptTokens = new Set(tokenize(record.communityTranscript));
+  const explainReferencesTokens = new Set(tokenize(record.explainReferences ?? ""));
+  const explanationTokens = new Set(tokenize(record.explanation ?? ""));
   const matchedFields = new Set<string>();
   let score = 0;
 
@@ -82,6 +94,21 @@ function scoreRecord(
       score += FIELD_WEIGHTS.phraseTranscript;
       matchedFields.add("transcript");
     }
+
+    if (fields.communityTranscript.includes(phrase)) {
+      score += FIELD_WEIGHTS.phraseCommunityTranscript;
+      matchedFields.add("communityTranscript");
+    }
+
+    if (fields.explainReferences.includes(phrase)) {
+      score += FIELD_WEIGHTS.phraseExplainReferences;
+      matchedFields.add("explainReferences");
+    }
+
+    if (fields.explanation.includes(phrase)) {
+      score += FIELD_WEIGHTS.phraseExplanation;
+      matchedFields.add("explanation");
+    }
   }
 
   const uniqueHits = new Set<string>();
@@ -104,6 +131,24 @@ function scoreRecord(
       matchedFields.add("transcript");
       uniqueHits.add(token);
     }
+
+    if (communityTranscriptTokens.has(token)) {
+      score += FIELD_WEIGHTS.communityTranscript;
+      matchedFields.add("communityTranscript");
+      uniqueHits.add(token);
+    }
+
+    if (explainReferencesTokens.has(token)) {
+      score += FIELD_WEIGHTS.explainReferences;
+      matchedFields.add("explainReferences");
+      uniqueHits.add(token);
+    }
+
+    if (explanationTokens.has(token)) {
+      score += FIELD_WEIGHTS.explanation;
+      matchedFields.add("explanation");
+      uniqueHits.add(token);
+    }
   }
 
   if (query.tokens.length > 1 && uniqueHits.size > 1) {
@@ -123,7 +168,13 @@ function scoreRecord(
 }
 
 function buildExcerpt(record: ComicRecord, tokens: string[]): string {
-  const fields = [record.alt, record.transcript].filter(Boolean);
+  const fields = [
+    record.alt,
+    record.transcript,
+    record.communityTranscript,
+    record.explainReferences ?? "",
+    record.explanation ?? "",
+  ].filter(Boolean);
   const tokenSet = new Set(tokens);
 
   for (const field of fields) {
@@ -137,7 +188,15 @@ function buildExcerpt(record: ComicRecord, tokens: string[]): string {
     }
   }
 
-  return truncate(record.alt || record.transcript || record.title, 190);
+  return truncate(
+    record.alt ||
+      record.transcript ||
+      record.communityTranscript ||
+      record.explainReferences ||
+      record.explanation ||
+      record.title,
+    190,
+  );
 }
 
 function normalizeForComparison(value: string): string {

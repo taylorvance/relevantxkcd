@@ -53,6 +53,30 @@ Run tests:
 npm test
 ```
 
+Check local corpus status without network:
+
+```sh
+npm run corpus:status -- --offline
+```
+
+Check local corpus status against the current xkcd API:
+
+```sh
+npm run corpus:status
+```
+
+Fetch missing recent comics with respectful, resumable requests:
+
+```sh
+npm run corpus:fetch -- --recent
+```
+
+Fetch an explicit bounded range:
+
+```sh
+npm run corpus:fetch -- --range 3025-3035
+```
+
 Build the static app:
 
 ```sh
@@ -70,6 +94,12 @@ corpus is absent but `public/search-index.json` already exists, it keeps that
 checked-in public index. If neither exists, it falls back to the committed
 fixture set in `fixtures/xkcd`.
 
+Corpus fetch commands are foreground-only and safe to interrupt. They write
+ignored progress logs under `raw_data/runs/`, update `raw_data/manifest.json`,
+and skip files that already exist unless `--refresh` is passed. Fetching is
+single-threaded by default and waits at least 1500 ms between requests to the
+same source.
+
 ## Corpus Policy
 
 Do not commit the full raw corpus by default.
@@ -80,8 +110,8 @@ Recommended approach:
 - commit a small fixture set for tests
 - commit/publish only the generated app assets and the minimized public search
   index
-- avoid shipping explainxkcd-derived text in the public index until attribution
-  and license handling are implemented deliberately
+- keep explainxkcd-derived fields provenance-aware and attributed when included
+  in the public index
 
 The full raw corpus is around tens of megabytes and changes over time. Keeping
 it out of git avoids noisy vendor-data churn and reduces the chance of

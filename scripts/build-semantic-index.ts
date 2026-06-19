@@ -18,7 +18,14 @@ env.allowLocalModels = false;
 env.cacheDir = path.join(process.env.HOME ?? ".", ".cache", "xkcd-transformers");
 
 function semanticText(record: ComicRecord): string {
-  return [record.title, record.alt, record.transcript]
+  return [
+    record.title,
+    record.alt,
+    record.transcript,
+    record.communityTranscript,
+    record.explainReferences ?? "",
+    record.explanation ?? "",
+  ]
     .filter(Boolean)
     .join(". ")
     .slice(0, 3200);

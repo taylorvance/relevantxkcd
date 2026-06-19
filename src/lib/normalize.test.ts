@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import comic303 from "../../fixtures/xkcd/303.json";
 import comic1205 from "../../fixtures/xkcd/1205.json";
-import { cleanText, normalizeXkcdRecord } from "./normalize";
+import {
+  cleanText,
+  extractExplainReferences,
+  normalizeXkcdRecord,
+  parseExplainXkcdPage,
+} from "./normalize";
 
 describe("normalizeXkcdRecord", () => {
   it("normalizes a standard xkcd record", () => {
@@ -49,5 +54,51 @@ describe("normalizeXkcdRecord", () => {
     expect(cleanText("Oh dear\u00e2\u0080\u0094did he break something?")).toBe(
       "Oh dear-did he break something?",
     );
+  });
+
+  it("keeps explainxkcd text separate and provenance-marked", () => {
+    const record = normalizeXkcdRecord(comic1205, {
+      parse: {
+        wikitext: {
+          "*": "==Explanation==\nThis chart is about making a routine task more efficient.\n\n==Transcript==\n:A table about time saved.",
+        },
+      },
+    });
+
+    expect(record).toMatchObject({
+      communityTranscript: "A table about time saved.",
+      explanation: "This chart is about making a routine task more efficient.",
+      explainReferences: "",
+      explainUrl: "https://www.explainxkcd.com/wiki/index.php/1205",
+      sourceFlags: ["xkcd", "explainxkcd"],
+    });
+    expect(record?.searchText).toContain("routine task");
+  });
+});
+
+describe("extractExplainReferences", () => {
+  it("extracts related comic titles and categories", () => {
+    expect(
+      extractExplainReferences(
+        "See [[1319: Automation]] and [[951: Working|insufficient economy]]. [[Category:Time management]]",
+      ),
+    ).toBe("Automation. insufficient economy. Time management");
+  });
+});
+
+describe("parseExplainXkcdPage", () => {
+  it("extracts multiline top-level sections", () => {
+    expect(
+      parseExplainXkcdPage({
+        parse: {
+          wikitext: {
+            "*": "intro\n\n==Explanation==\none\n\ntwo\n==Transcript==\nthree",
+          },
+        },
+      }).sections,
+    ).toEqual({
+      Explanation: "one\n\ntwo",
+      Transcript: "three",
+    });
   });
 });

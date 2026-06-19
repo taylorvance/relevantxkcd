@@ -3,9 +3,10 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { normalizeXkcdRecord } from "../src/lib/normalize";
-import type { ComicRecord, XkcdRawComic } from "../src/lib/types";
+import type { ComicRecord, ExplainXkcdRawPage, XkcdRawComic } from "../src/lib/types";
 
 const DEFAULT_RAW_DIR = "raw_data/xkcd";
+const DEFAULT_EXPLAIN_DIR = "raw_data/explainxkcd";
 const DEFAULT_FIXTURE_DIR = "fixtures/xkcd";
 const DEFAULT_OUTPUT = "public/search-index.json";
 
@@ -21,7 +22,8 @@ async function loadRecords(sourceDir: string): Promise<ComicRecord[]> {
   for (const file of files) {
     const filePath = path.join(sourceDir, file);
     const raw = JSON.parse(await readFile(filePath, "utf8")) as XkcdRawComic;
-    const record = normalizeXkcdRecord(raw);
+    const explainRaw = await readExplainRecord(Number.parseInt(file, 10));
+    const record = normalizeXkcdRecord(raw, explainRaw);
 
     if (record) {
       records.push(record);
@@ -29,6 +31,20 @@ async function loadRecords(sourceDir: string): Promise<ComicRecord[]> {
   }
 
   return records;
+}
+
+async function readExplainRecord(num: number): Promise<ExplainXkcdRawPage | null> {
+  if (!existsSync(DEFAULT_EXPLAIN_DIR)) {
+    return null;
+  }
+
+  const explainPath = path.join(DEFAULT_EXPLAIN_DIR, `${num}.json`);
+
+  if (!existsSync(explainPath)) {
+    return null;
+  }
+
+  return JSON.parse(await readFile(explainPath, "utf8")) as ExplainXkcdRawPage;
 }
 
 async function main(): Promise<void> {
@@ -53,11 +69,18 @@ async function main(): Promise<void> {
 
   const records = await loadRecords(sourceDir);
   records.sort((a, b) => a.num - b.num);
+  const publicRecords = records.map(toPublicRecord);
 
   await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, `${JSON.stringify(records)}\n`);
+  await writeFile(outputPath, `${JSON.stringify(publicRecords)}\n`);
 
   console.log(`Wrote ${records.length} records from ${sourceDir} to ${outputPath}`);
+}
+
+function toPublicRecord(record: ComicRecord): ComicRecord {
+  const { explanation: _explanation, searchText: _searchText, ...publicRecord } = record;
+
+  return publicRecord;
 }
 
 main().catch((error) => {
