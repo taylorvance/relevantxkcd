@@ -78,7 +78,10 @@ async function main(): Promise<void> {
 }
 
 function toPublicRecord(record: ComicRecord): ComicRecord {
-  const { explanation: _explanation, searchText: _searchText, ...publicRecord } = record;
+  const publicRecord = { ...record };
+
+  delete publicRecord.explanation;
+  delete publicRecord.searchText;
 
   return publicRecord;
 }

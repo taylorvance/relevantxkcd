@@ -11,19 +11,24 @@
     "corpus:status": "tsx scripts/corpus-status.ts",
     "generate:index": "tsx scripts/build-index.ts",
     "generate:semantic": "tsx scripts/build-semantic-index.ts",
+    "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify": "npm run lint && npm run test && npm run build"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
+    "@taylorvance/tv-shared-web": "^0.7.2",
     "react": "^19.2.1",
     "react-dom": "^19.2.1"
   },
   "devDependencies": {
+    "@taylorvance/tv-shared-dev": "^0.1.1",
     "@types/node": "^25.0.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
+    "eslint": "^9.39.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^7.2.7",

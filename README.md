@@ -53,6 +53,12 @@ Run tests:
 npm test
 ```
 
+Run the full local verification path:
+
+```sh
+npm run verify
+```
+
 Check local corpus status without network:
 
 ```sh
