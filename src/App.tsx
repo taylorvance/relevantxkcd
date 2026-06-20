@@ -1,8 +1,17 @@
+import { writeClipboardText } from "@taylorvance/tv-shared-web";
+import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import type { ComicRecord, SearchResult } from "./lib/types";
 
-const RESULT_LIMIT = 24;
+const EXCERPT_SOURCE_LABELS: Record<SearchResult["excerptSource"], string> = {
+  alt: "Alt text",
+  transcript: "Transcript",
+  communityTranscript: "Community",
+  explainReferences: "Explain",
+  explanation: "Explanation",
+  title: "Title",
+};
 
 interface WorkerResponse {
   id: number;
@@ -24,6 +33,13 @@ export function App() {
   const [semanticEnabled, setSemanticEnabled] = useState(false);
   const [semanticStatus, setSemanticStatus] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [resultScroll, setResultScroll] = useState({
+    max: 0,
+    value: 0,
+    visibleRatio: 1,
+  });
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const requestIdRef = useRef(0);
 
@@ -63,11 +79,7 @@ export function App() {
 
         const first = message.results?.[0] ?? null;
         if (first) {
-          setSelectedNum((current) =>
-            current && message.results?.some((result) => result.num === current)
-              ? current
-              : first.num,
-          );
+          setSelectedNum((current) => current ?? first.num);
         }
         return;
       }
@@ -125,15 +137,85 @@ export function App() {
     });
   }, [selectedNum]);
 
+  useEffect(() => {
+    const syncResultScroll = () => {
+      const element = resultsRef.current;
+
+      if (!element) {
+        setResultScroll({ max: 0, value: 0, visibleRatio: 1 });
+        return;
+      }
+
+      const scrollWidth = element.scrollWidth;
+      const clientWidth = element.clientWidth;
+
+      setResultScroll({
+        max: Math.max(0, scrollWidth - clientWidth),
+        value: element.scrollLeft,
+        visibleRatio: scrollWidth > 0 ? Math.min(1, clientWidth / scrollWidth) : 1,
+      });
+    };
+
+    syncResultScroll();
+    window.addEventListener("resize", syncResultScroll);
+
+    return () => {
+      window.removeEventListener("resize", syncResultScroll);
+    };
+  }, [results.length]);
+
+  function clearQuery() {
+    setQuery("");
+    inputRef.current?.focus();
+  }
+
   async function copySelectedLink() {
     if (!selected) {
       return;
     }
 
-    await navigator.clipboard.writeText(selected.canonicalUrl);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1400);
+    const didCopy = await writeClipboardText(selected.canonicalUrl);
+
+    if (didCopy) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    }
   }
+
+  function syncResultScroll() {
+    const element = resultsRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    const scrollWidth = element.scrollWidth;
+    const clientWidth = element.clientWidth;
+
+    setResultScroll({
+      max: Math.max(0, scrollWidth - clientWidth),
+      value: element.scrollLeft,
+      visibleRatio: scrollWidth > 0 ? Math.min(1, clientWidth / scrollWidth) : 1,
+    });
+  }
+
+  function setResultScrollPosition(value: number) {
+    const element = resultsRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    element.scrollLeft = value;
+    syncResultScroll();
+  }
+
+  const searchBusy =
+    comicCount === 0 || isSearching || (semanticStatus !== "" && semanticStatus !== "Semantic ready");
+  const searchStatus = comicCount === 0 ? "Loading index" : semanticStatus || (isSearching ? "Searching" : "");
+  const resultScrollbarStyle = {
+    "--result-scroll-thumb-size": `${Math.max(18, resultScroll.visibleRatio * 100)}%`,
+  } as CSSProperties;
 
   return (
     <main className="app-shell">
@@ -148,15 +230,29 @@ export function App() {
       </header>
 
       <section className="search-row" aria-label="Search comics">
-        <input
-          autoFocus
-          className="search-input"
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="standards, password strength, git"
-          aria-label="Search xkcd comics"
-        />
+        <div className="search-box">
+          <input
+            autoFocus
+            className="search-input"
+            ref={inputRef}
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="standards, password strength, git"
+            aria-label="Search xkcd comics"
+          />
+          {query ? (
+            <button
+              aria-label="Clear search"
+              className="clear-search-button"
+              onClick={clearQuery}
+              title="Clear search"
+              type="button"
+            >
+              x
+            </button>
+          ) : null}
+        </div>
         <label className="semantic-toggle">
           <input
             checked={semanticEnabled}
@@ -165,26 +261,62 @@ export function App() {
           />
           <span>Semantic</span>
         </label>
+        <div
+          aria-atomic="true"
+          aria-live="polite"
+          className={`search-status ${searchBusy ? "is-active" : ""}`}
+        >
+          {searchStatus ? (
+            <>
+              <span aria-hidden="true" className="status-spinner" />
+              <span>{searchStatus}</span>
+            </>
+          ) : null}
+        </div>
         <div className="count" aria-live="polite">
-          {semanticStatus ||
-            (isSearching ? "Searching" : comicCount ? `${comicCount} comics` : "Loading index")}
+          {comicCount ? `${comicCount} comics` : ""}
         </div>
       </section>
 
       <section className="workspace">
-        <div className="results" aria-label="Search results">
-          {results.map((result) => (
-            <button
-              className={`result-card ${selected?.num === result.num ? "is-selected" : ""}`}
-              key={result.num}
-              onClick={() => setSelectedNum(result.num)}
-              type="button"
-            >
-              <span className="result-meta">#{result.num}</span>
-              <span className="result-title">{result.title}</span>
-              <span className="result-excerpt">{result.excerpt}</span>
-            </button>
-          ))}
+        <div className="results-panel">
+          <div
+            aria-busy={searchBusy}
+            className="results"
+            aria-label="Search results"
+            onScroll={syncResultScroll}
+            ref={resultsRef}
+          >
+            {results.map((result) => (
+              <button
+                className={`result-card ${selected?.num === result.num ? "is-selected" : ""}`}
+                key={result.num}
+                onClick={() => setSelectedNum(result.num)}
+                type="button"
+              >
+                <span className="result-card-top">
+                  <span className="result-meta">#{result.num}</span>
+                  <span className="result-source">
+                    {EXCERPT_SOURCE_LABELS[result.excerptSource]}
+                  </span>
+                </span>
+                <span className="result-title">{result.title}</span>
+                <span className="result-excerpt">{result.excerpt}</span>
+              </button>
+            ))}
+          </div>
+          {resultScroll.max > 0 ? (
+            <input
+              aria-label="Scroll search results"
+              className="result-scrollbar"
+              max={resultScroll.max}
+              min="0"
+              onChange={(event) => setResultScrollPosition(Number(event.target.value))}
+              style={resultScrollbarStyle}
+              type="range"
+              value={Math.min(resultScroll.value, resultScroll.max)}
+            />
+          ) : null}
         </div>
 
         <article className="detail" aria-label="Selected comic">

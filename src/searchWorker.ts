@@ -1,6 +1,6 @@
 import { blendSearchResults, decodeSemanticIndex, rankSemantic } from "./lib/semantic";
+import { buildResultExcerpt, searchComics } from "./lib/search";
 import { embedQuery, loadSemanticIndex } from "./lib/semanticModel";
-import { searchComics } from "./lib/search";
 import type { ComicRecord, SearchResult } from "./lib/types";
 
 const RESULT_LIMIT = 24;
@@ -61,7 +61,7 @@ loadRecords().catch((error) => {
 });
 
 async function loadRecords(): Promise<void> {
-  const response = await fetch("/search-index.json");
+  const response = await fetch("/search-index.json", { cache: "no-cache" });
 
   if (!response.ok) {
     throw new Error(`Index request failed: ${response.status}`);
@@ -147,12 +147,7 @@ function recentRecords(): SearchResult[] {
     .map((record) => ({
       ...record,
       score: 0,
-      excerpt:
-        record.alt ||
-        record.transcript ||
-        record.communityTranscript ||
-        record.explainReferences ||
-        record.title,
+      ...buildResultExcerpt(record),
       matchedFields: [],
     }));
 }

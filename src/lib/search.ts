@@ -1,4 +1,14 @@
-import type { ComicRecord, SearchResult } from "./types";
+import type { ComicRecord, ExcerptSource, SearchResult } from "./types";
+
+interface Excerpt {
+  excerpt: string;
+  excerptSource: ExcerptSource;
+}
+
+interface ExcerptCandidate {
+  source: ExcerptSource;
+  value: string;
+}
 
 const FIELD_WEIGHTS = {
   title: 80,
@@ -162,41 +172,51 @@ function scoreRecord(
   return {
     ...record,
     score,
-    excerpt: buildExcerpt(record, query.tokens),
+    ...buildResultExcerpt(record, query.tokens),
     matchedFields: Array.from(matchedFields),
   };
 }
 
-function buildExcerpt(record: ComicRecord, tokens: string[]): string {
-  const fields = [
-    record.alt,
-    record.transcript,
-    record.communityTranscript,
-    record.explainReferences ?? "",
-    record.explanation ?? "",
-  ].filter(Boolean);
+export function buildResultExcerpt(record: ComicRecord, tokens: string[] = []): Excerpt {
+  const fields = getExcerptCandidates(record);
   const tokenSet = new Set(tokens);
 
   for (const field of fields) {
-    const sentences = field.split(/(?<=[.!?])\s+/);
+    const sentences = field.value.split(/(?<=[.!?])\s+/);
     const match = sentences.find((sentence) =>
       tokenize(sentence).some((token) => tokenSet.has(token)),
     );
 
     if (match) {
-      return truncate(match, 190);
+      return {
+        excerpt: truncate(cleanExcerpt(match), 190),
+        excerptSource: field.source,
+      };
     }
   }
 
-  return truncate(
-    record.alt ||
-      record.transcript ||
-      record.communityTranscript ||
-      record.explainReferences ||
-      record.explanation ||
-      record.title,
-    190,
-  );
+  const fallback = fields[0] ?? {
+    source: "title" as const,
+    value: record.title,
+  };
+
+  return {
+    excerpt: truncate(cleanExcerpt(fallback.value), 190),
+    excerptSource: fallback.source,
+  };
+}
+
+function getExcerptCandidates(record: ComicRecord): ExcerptCandidate[] {
+  const candidates: ExcerptCandidate[] = [
+    { source: "alt", value: record.alt },
+    { source: "transcript", value: record.transcript },
+    { source: "communityTranscript", value: record.communityTranscript },
+    { source: "explainReferences", value: record.explainReferences ?? "" },
+    { source: "explanation", value: record.explanation ?? "" },
+    { source: "title", value: record.title },
+  ];
+
+  return candidates.filter((field) => cleanExcerpt(field.value).length > 0);
 }
 
 function normalizeForComparison(value: string): string {
@@ -227,6 +247,10 @@ function truncate(value: string, maxLength: number): string {
   }
 
   return `${value.slice(0, maxLength - 1).trim()}...`;
+}
+
+function cleanExcerpt(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function unique(values: string[]): string[] {

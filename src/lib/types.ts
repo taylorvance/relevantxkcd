@@ -48,5 +48,14 @@ export interface ComicRecord {
 export interface SearchResult extends ComicRecord {
   score: number;
   excerpt: string;
+  excerptSource: ExcerptSource;
   matchedFields: string[];
 }
+
+export type ExcerptSource =
+  | "alt"
+  | "transcript"
+  | "communityTranscript"
+  | "explainReferences"
+  | "explanation"
+  | "title";

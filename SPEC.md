@@ -180,6 +180,76 @@ Calibration queries:
 
 These are test fixtures, not a permanent truth table for every ranking decision.
 
+## Search Enhancement TODOs
+
+Treat semantic search as an automatic enhancement to fast lexical search, not as
+the only retrieval mode. The app should remain useful when semantic assets,
+model loading, browser WASM support, or runtime embedding fail.
+
+Target behavior:
+
+- Show lexical results immediately for each query.
+- Start semantic refinement only for non-empty queries.
+- Discard semantic responses for stale queries.
+- Apply at most one semantic merge per query.
+- Never auto-change the selected comic after initial load.
+- Never reset result-list scroll or focus when refined results arrive.
+- Keep strong lexical matches stable near the top.
+- Insert semantic-only results only when their score clears a measured
+  threshold.
+- Prefer promotion over broad reshuffling: overlapping lexical+semantic matches
+  can move modestly, but exact title/phrase matches should not be displaced by
+  fuzzy semantic matches.
+- Show clear status states such as `Searching`, `Refining`, and briefly
+  `Refined` without replacing stable count or result context.
+- Preserve result-card explanation: every visible excerpt should identify
+  whether it came from title, alt text, transcript, community text, explainxkcd,
+  or semantic-only evidence.
+
+Merge model TODOs:
+
+- Normalize lexical and semantic scores onto comparable ranges before blending.
+- Define "strong lexical match" by observed score and match type, not by a hard
+  top-N rule alone.
+- Define a semantic-only inclusion threshold from calibration queries.
+- Add an overlap bonus for records that appear in both lexical and semantic
+  candidate sets.
+- Keep blend weights explicit and test-covered.
+- Consider a simple initial formula:
+
+```ts
+finalScore =
+  lexicalNormalized * 0.55 +
+  semanticNormalized * 0.35 +
+  overlapBonus * 0.10
+```
+
+This formula is a starting hypothesis, not a committed tuning decision.
+
+Interaction stability TODOs:
+
+- Apply lexical updates on input changes.
+- Apply semantic refinement only once the current query's embedding and ranking
+  finish.
+- If the user is actively scrolling, hovering, or keyboard-focusing the results
+  list, hold the semantic merge until a short idle window.
+- Start with simple stability protections before building complex interaction
+  detection: stale-response discard, one semantic merge per query, no selection
+  changes, no scroll reset, and conservative promotion thresholds.
+- Add regression tests for selection stability and stale semantic responses.
+
+Calibration TODOs:
+
+- Exact/title queries such as `standards`, `password strength`, `compiling`, and
+  quoted phrases should remain dominated by lexical evidence.
+- Concept queries such as `dependency graph`, `automation`, and future
+  user-observed misses should demonstrate whether semantic refinement improves
+  recall.
+- Keep a small query evaluation list with expected top results, acceptable
+  alternatives, and notes explaining why a result should or should not move
+  after semantic refinement.
+- Revisit thresholds and weights only after measuring this calibration list.
+
 ## Acceptance Criteria
 
 Phase 1: normalization

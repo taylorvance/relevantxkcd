@@ -1,4 +1,5 @@
 import type { ComicRecord, SearchResult } from "./types";
+import { buildResultExcerpt } from "./search";
 
 export interface SemanticIndexFile {
   model: string;
@@ -95,7 +96,7 @@ export function blendSearchResults(
     candidates.set(result.num, {
       ...record,
       score: 0,
-      excerpt: record.alt || record.transcript || record.title,
+      ...buildResultExcerpt(record),
       matchedFields: ["semantic"],
     });
   }

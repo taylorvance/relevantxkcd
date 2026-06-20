@@ -37,6 +37,7 @@ describe("blendSearchResults", () => {
         ...records[1],
         score: 1200,
         excerpt: "Automation",
+        excerptSource: "title",
         matchedFields: ["title"],
       },
     ];
