@@ -116,8 +116,9 @@ Recommended approach:
 - commit a small fixture set for tests
 - commit/publish only the generated app assets and the minimized public search
   index
-- keep explainxkcd-derived fields provenance-aware and attributed when included
-  in the public index
+- use explainxkcd-derived transcript text as lower-weight supplemental search
+  text, with normal transcript weight when xkcd does not provide a transcript
+  and with provenance and attribution preserved
 
 The full raw corpus is around tens of megabytes and changes over time. Keeping
 it out of git avoids noisy vendor-data churn and reduces the chance of
@@ -148,9 +149,10 @@ not an afterthought. For MVP, the safest public index is based on xkcd-provided
 metadata and links. explainxkcd content can be used locally while the public
 redistribution plan is made explicit.
 
-Because public indexes currently include xkcd-derived and explainxkcd-derived
-fields, public use of the app and repository should remain noncommercial and
-should preserve attribution, source links, and upstream license notices.
+Because public indexes currently include xkcd-derived content and explainxkcd
+transcript text, public use of the app and repository should remain
+noncommercial and should preserve attribution, source links, and upstream
+license notices.
 
 ## Reference
 

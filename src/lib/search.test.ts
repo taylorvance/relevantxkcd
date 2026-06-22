@@ -9,6 +9,7 @@ import comic1319 from "../../fixtures/xkcd/1319.json";
 import comic1597 from "../../fixtures/xkcd/1597.json";
 import { normalizeXkcdRecord } from "./normalize";
 import { searchComics, tokenize } from "./search";
+import type { ComicRecord } from "./types";
 
 const records = [
   comic303,
@@ -46,6 +47,27 @@ describe("searchComics", () => {
     );
   });
 
+  it("promotes community transcript weight when official transcript is missing", () => {
+    const results = searchComics(
+      [
+        record({
+          num: 1,
+          title: "Official present",
+          transcript: "Official words.",
+          communityTranscript: "sharedneedle",
+        }),
+        record({
+          num: 2,
+          title: "Official missing",
+          communityTranscript: "sharedneedle",
+        }),
+      ],
+      "sharedneedle",
+    );
+
+    expect(results.map((result) => result.num)).toEqual([2, 1]);
+  });
+
   it("stems simple plurals", () => {
     expect(tokenize("standards dependencies")).toEqual([
       "standard",
@@ -53,3 +75,21 @@ describe("searchComics", () => {
     ]);
   });
 });
+
+function record(overrides: Partial<ComicRecord>): ComicRecord {
+  return {
+    num: 0,
+    slug: "",
+    title: "",
+    published: "",
+    imageUrl: "",
+    canonicalUrl: "",
+    alt: "",
+    transcript: "",
+    communityTranscript: "",
+    explainUrl: "",
+    searchText: "",
+    sourceFlags: ["xkcd"],
+    ...overrides,
+  };
+}

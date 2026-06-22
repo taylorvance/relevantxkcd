@@ -2,12 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import comic303 from "../../fixtures/xkcd/303.json";
 import comic1205 from "../../fixtures/xkcd/1205.json";
-import {
-  cleanText,
-  extractExplainReferences,
-  normalizeXkcdRecord,
-  parseExplainXkcdPage,
-} from "./normalize";
+import { cleanText, normalizeXkcdRecord, parseExplainXkcdPage } from "./normalize";
 
 describe("normalizeXkcdRecord", () => {
   it("normalizes a standard xkcd record", () => {
@@ -56,33 +51,48 @@ describe("normalizeXkcdRecord", () => {
     );
   });
 
-  it("keeps explainxkcd text separate and provenance-marked", () => {
+  it("keeps cleaned explainxkcd transcript separate from official transcript", () => {
     const record = normalizeXkcdRecord(comic1205, {
       parse: {
         wikitext: {
-          "*": "==Explanation==\nThis chart is about making a routine task more efficient.\n\n==Transcript==\n:A table about time saved.",
+          "*": "==Explanation==\nWiki-only explanation phrase.\n\n==Transcript==\n:A table about time saved. <noinclude>[[Category:Time management]]</noinclude>",
         },
       },
     });
 
     expect(record).toMatchObject({
       communityTranscript: "A table about time saved.",
-      explanation: "This chart is about making a routine task more efficient.",
-      explainReferences: "",
       explainUrl: "https://www.explainxkcd.com/wiki/index.php/1205",
       sourceFlags: ["xkcd", "explainxkcd"],
     });
-    expect(record?.searchText).toContain("routine task");
+    expect(record?.searchText).toContain("A table about time saved.");
+    expect(record?.searchText).not.toContain("Wiki-only explanation phrase");
   });
-});
 
-describe("extractExplainReferences", () => {
-  it("extracts related comic titles and categories", () => {
-    expect(
-      extractExplainReferences(
-        "See [[1319: Automation]] and [[951: Working|insufficient economy]]. [[Category:Time management]]",
-      ),
-    ).toBe("Automation. insufficient economy. Time management");
+  it("falls back to a cleaned explainxkcd transcript", () => {
+    const record = normalizeXkcdRecord(
+      {
+        num: 99999,
+        title: "Sparse Comic",
+        year: "2026",
+        month: "6",
+        day: "17",
+        img: "https://imgs.xkcd.com/comics/sparse.png",
+      },
+      {
+        parse: {
+          wikitext: {
+            "*": "==Transcript==\n:A table about time saved. <noinclude>[[Category:Time management]]</noinclude>",
+          },
+        },
+      },
+    );
+
+    expect(record).toMatchObject({
+      communityTranscript: "A table about time saved.",
+      sourceFlags: ["xkcd", "explainxkcd"],
+    });
+    expect(record?.searchText).toContain("A table about time saved.");
   });
 });
 

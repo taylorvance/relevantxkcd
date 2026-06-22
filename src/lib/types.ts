@@ -38,8 +38,6 @@ export interface ComicRecord {
   alt: string;
   transcript: string;
   communityTranscript: string;
-  explanation?: string;
-  explainReferences: string;
   explainUrl: string;
   searchText?: string;
   sourceFlags: SourceFlag[];
@@ -49,6 +47,7 @@ export interface SearchResult extends ComicRecord {
   score: number;
   excerpt: string;
   excerptSource: ExcerptSource;
+  matchSource: MatchSource;
   matchedFields: string[];
 }
 
@@ -56,6 +55,6 @@ export type ExcerptSource =
   | "alt"
   | "transcript"
   | "communityTranscript"
-  | "explainReferences"
-  | "explanation"
   | "title";
+
+export type MatchSource = ExcerptSource | "semantic";

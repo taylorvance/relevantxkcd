@@ -41,8 +41,8 @@ License:
 - https://creativecommons.org/licenses/by-sa/3.0/
 
 This applies to explainxkcd wiki content used by this project, including
-community transcripts, references, explanations, or other wiki-derived fields
-where present in local fixtures or generated indexes.
+community transcripts or other wiki-derived fields where present in local
+fixtures or generated indexes.
 
 Use of explainxkcd-derived content requires appropriate attribution, license
 links, and ShareAlike handling for adapted material. The explainxkcd copyright

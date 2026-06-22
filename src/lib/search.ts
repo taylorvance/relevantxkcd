@@ -1,4 +1,4 @@
-import type { ComicRecord, ExcerptSource, SearchResult } from "./types";
+import type { ComicRecord, ExcerptSource, MatchSource, SearchResult } from "./types";
 
 interface Excerpt {
   excerpt: string;
@@ -14,15 +14,13 @@ const FIELD_WEIGHTS = {
   title: 80,
   alt: 24,
   transcript: 14,
-  communityTranscript: 10,
-  explainReferences: 10,
-  explanation: 6,
+  communityTranscript: 14,
+  communityTranscriptSupplemental: 6,
   phraseTitle: 420,
   phraseAlt: 120,
   phraseTranscript: 70,
-  phraseCommunityTranscript: 54,
-  phraseExplainReferences: 54,
-  phraseExplanation: 38,
+  phraseCommunityTranscript: 70,
+  phraseCommunityTranscriptSupplemental: 32,
 };
 
 export function searchComics(
@@ -72,15 +70,12 @@ function scoreRecord(
     alt: normalizeForComparison(record.alt),
     transcript: normalizeForComparison(record.transcript),
     communityTranscript: normalizeForComparison(record.communityTranscript),
-    explainReferences: normalizeForComparison(record.explainReferences ?? ""),
-    explanation: normalizeForComparison(record.explanation ?? ""),
   };
   const titleTokens = new Set(tokenize(record.title));
   const altTokens = new Set(tokenize(record.alt));
   const transcriptTokens = new Set(tokenize(record.transcript));
   const communityTranscriptTokens = new Set(tokenize(record.communityTranscript));
-  const explainReferencesTokens = new Set(tokenize(record.explainReferences ?? ""));
-  const explanationTokens = new Set(tokenize(record.explanation ?? ""));
+  const hasOfficialTranscript = record.transcript.trim().length > 0;
   const matchedFields = new Set<string>();
   let score = 0;
 
@@ -106,18 +101,10 @@ function scoreRecord(
     }
 
     if (fields.communityTranscript.includes(phrase)) {
-      score += FIELD_WEIGHTS.phraseCommunityTranscript;
+      score += hasOfficialTranscript
+        ? FIELD_WEIGHTS.phraseCommunityTranscriptSupplemental
+        : FIELD_WEIGHTS.phraseCommunityTranscript;
       matchedFields.add("communityTranscript");
-    }
-
-    if (fields.explainReferences.includes(phrase)) {
-      score += FIELD_WEIGHTS.phraseExplainReferences;
-      matchedFields.add("explainReferences");
-    }
-
-    if (fields.explanation.includes(phrase)) {
-      score += FIELD_WEIGHTS.phraseExplanation;
-      matchedFields.add("explanation");
     }
   }
 
@@ -143,20 +130,10 @@ function scoreRecord(
     }
 
     if (communityTranscriptTokens.has(token)) {
-      score += FIELD_WEIGHTS.communityTranscript;
+      score += hasOfficialTranscript
+        ? FIELD_WEIGHTS.communityTranscriptSupplemental
+        : FIELD_WEIGHTS.communityTranscript;
       matchedFields.add("communityTranscript");
-      uniqueHits.add(token);
-    }
-
-    if (explainReferencesTokens.has(token)) {
-      score += FIELD_WEIGHTS.explainReferences;
-      matchedFields.add("explainReferences");
-      uniqueHits.add(token);
-    }
-
-    if (explanationTokens.has(token)) {
-      score += FIELD_WEIGHTS.explanation;
-      matchedFields.add("explanation");
       uniqueHits.add(token);
     }
   }
@@ -173,8 +150,19 @@ function scoreRecord(
     ...record,
     score,
     ...buildResultExcerpt(record, query.tokens),
+    matchSource: pickMatchSource(matchedFields),
     matchedFields: Array.from(matchedFields),
   };
+}
+
+function pickMatchSource(matchedFields: Set<string>): MatchSource {
+  for (const field of ["title", "alt", "transcript", "communityTranscript"] as const) {
+    if (matchedFields.has(field)) {
+      return field;
+    }
+  }
+
+  return "title";
 }
 
 export function buildResultExcerpt(record: ComicRecord, tokens: string[] = []): Excerpt {
@@ -211,8 +199,6 @@ function getExcerptCandidates(record: ComicRecord): ExcerptCandidate[] {
     { source: "alt", value: record.alt },
     { source: "transcript", value: record.transcript },
     { source: "communityTranscript", value: record.communityTranscript },
-    { source: "explainReferences", value: record.explainReferences ?? "" },
-    { source: "explanation", value: record.explanation ?? "" },
     { source: "title", value: record.title },
   ];
 

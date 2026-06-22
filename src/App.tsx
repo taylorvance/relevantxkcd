@@ -7,10 +7,16 @@ import type { ComicRecord, SearchResult } from "./lib/types";
 const EXCERPT_SOURCE_LABELS: Record<SearchResult["excerptSource"], string> = {
   alt: "Alt text",
   transcript: "Transcript",
-  communityTranscript: "Community",
-  explainReferences: "Explain",
-  explanation: "Explanation",
+  communityTranscript: "Transcript",
   title: "Title",
+};
+
+const MATCH_SOURCE_LABELS: Record<SearchResult["matchSource"], string> = {
+  title: "Title match",
+  alt: "Alt text match",
+  transcript: "Transcript match",
+  communityTranscript: "Transcript match",
+  semantic: "Semantic match",
 };
 
 interface WorkerResponse {
@@ -210,6 +216,10 @@ export function App() {
     syncResultScroll();
   }
 
+  function resultMatchLabel(result: SearchResult): string {
+    return MATCH_SOURCE_LABELS[result.matchSource] ?? EXCERPT_SOURCE_LABELS[result.excerptSource];
+  }
+
   const searchBusy =
     comicCount === 0 || isSearching || (semanticStatus !== "" && semanticStatus !== "Semantic ready");
   const searchStatus = comicCount === 0 ? "Loading index" : semanticStatus || (isSearching ? "Searching" : "");
@@ -297,7 +307,7 @@ export function App() {
                 <span className="result-card-top">
                   <span className="result-meta">#{result.num}</span>
                   <span className="result-source">
-                    {EXCERPT_SOURCE_LABELS[result.excerptSource]}
+                    {resultMatchLabel(result)}
                   </span>
                 </span>
                 <span className="result-title">{result.title}</span>

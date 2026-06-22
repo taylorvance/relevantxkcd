@@ -144,12 +144,17 @@ function recentRecords(): SearchResult[] {
     .slice()
     .sort((a, b) => b.num - a.num)
     .slice(0, RESULT_LIMIT)
-    .map((record) => ({
-      ...record,
-      score: 0,
-      ...buildResultExcerpt(record),
-      matchedFields: [],
-    }));
+    .map((record) => {
+      const excerpt = buildResultExcerpt(record);
+
+      return {
+        ...record,
+        score: 0,
+        ...excerpt,
+        matchSource: excerpt.excerptSource,
+        matchedFields: [],
+      };
+    });
 }
 
 function post(message: WorkerResponse): void {

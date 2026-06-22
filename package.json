@@ -7,10 +7,10 @@
   "scripts": {
     "dev": "npm run generate:index && vite",
     "build": "npm run generate:index && tsc -b && vite build",
-    "corpus:fetch": "tsx scripts/fetch-corpus.ts",
-    "corpus:status": "tsx scripts/corpus-status.ts",
-    "generate:index": "tsx scripts/build-index.ts",
-    "generate:semantic": "tsx scripts/build-semantic-index.ts",
+    "corpus:fetch": "node scripts/fetch-corpus.ts",
+    "corpus:status": "node scripts/corpus-status.ts",
+    "generate:index": "node scripts/build-index.ts",
+    "generate:semantic": "node scripts/build-semantic-index.ts",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -29,7 +29,6 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^9.39.4",
-    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^7.2.7",
     "vitest": "^4.0.15"

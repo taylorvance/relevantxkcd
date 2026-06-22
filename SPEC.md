@@ -122,6 +122,8 @@ needs. For MVP, prefer xkcd-provided fields:
 - canonical URL
 - alt text
 - transcript if useful
+- lower-weight explainxkcd transcript text, promoted to normal transcript
+  weight when xkcd does not provide one
 - compact search text derived from those fields
 
 explainxkcd-derived text can improve recall, but public redistribution has
@@ -155,6 +157,10 @@ Target record shape:
 
 If explainxkcd content is later included, add separate fields instead of hiding
 its provenance inside `searchText`.
+
+For the MVP, do not index explainxkcd explanation text or related-reference
+links/categories. Use explainxkcd transcript text as supplemental comic-visible
+text, weighted lower when an xkcd transcript is present.
 
 ## Ranking Baseline
 
@@ -203,8 +209,7 @@ Target behavior:
 - Show clear status states such as `Searching`, `Refining`, and briefly
   `Refined` without replacing stable count or result context.
 - Preserve result-card explanation: every visible excerpt should identify
-  whether it came from title, alt text, transcript, community text, explainxkcd,
-  or semantic-only evidence.
+  whether it came from title, alt text, transcript, or semantic-only evidence.
 
 Merge model TODOs:
 
@@ -283,8 +288,6 @@ Phase 3: app
 - Exact fixture set.
 - Whether the first public index includes xkcd transcript text or only title and
   alt text.
-- Whether explainxkcd text is excluded from public assets or included with full
-  CC BY-SA attribution handling.
 - Whether the generated public index should be checked in or produced only as a
   build artifact.
 - What relevance threshold would justify moving beyond static client-side

@@ -17,8 +17,8 @@ import {
   writeJsonIfMissing,
   writeManifest,
   XKCD_DIR,
-} from "./lib/corpus";
-import type { ExplainXkcdRawPage, XkcdRawComic } from "../src/lib/types";
+} from "./lib/corpus.ts";
+import type { ExplainXkcdRawPage, XkcdRawComic } from "../src/lib/types.ts";
 
 interface RunCounts {
   fetched: number;

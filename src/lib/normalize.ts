@@ -28,9 +28,7 @@ export function normalizeXkcdRecord(
   const canonicalUrl = `https://xkcd.com/${num}/`;
   const explainUrl = `https://www.explainxkcd.com/wiki/index.php/${num}`;
   const explain = explainRaw ? parseExplainXkcdPage(explainRaw) : null;
-  const communityTranscript = cleanWikiText(explain?.sections.Transcript ?? "");
-  const explanation = cleanWikiText(explain?.sections.Explanation ?? "");
-  const explainReferences = cleanWikiText(extractExplainReferences(explain?.wikitext ?? ""));
+  const communityTranscript = cleanCommunityTranscript(explain?.sections.Transcript ?? "");
   const sourceFlags = explainRaw ? (["xkcd", "explainxkcd"] as const) : (["xkcd"] as const);
 
   return {
@@ -43,31 +41,12 @@ export function normalizeXkcdRecord(
     alt,
     transcript,
     communityTranscript,
-    explanation,
-    explainReferences,
     explainUrl,
-    searchText: [title, alt, transcript, communityTranscript, explainReferences, explanation]
+    searchText: [title, alt, transcript, communityTranscript]
       .filter(Boolean)
       .join("\n"),
     sourceFlags: [...sourceFlags],
   };
-}
-
-export function extractExplainReferences(wikitext: string): string {
-  const references = new Set<string>();
-  const comicLinkPattern = /\[\[(\d+):\s*([^\]|]+)(?:\|([^\]]+))?\]\]/g;
-  const categoryPattern = /\[\[Category:([^\]]+)\]\]/g;
-  let match: RegExpExecArray | null;
-
-  while ((match = comicLinkPattern.exec(wikitext)) !== null) {
-    references.add(match[3] ?? match[2]);
-  }
-
-  while ((match = categoryPattern.exec(wikitext)) !== null) {
-    references.add(match[1]);
-  }
-
-  return Array.from(references).join(". ");
 }
 
 export function parseExplainXkcdPage(raw: ExplainXkcdRawPage): {
@@ -130,6 +109,19 @@ export function cleanWikiText(value: unknown): string {
       .replace(/'{2,}/g, "")
       .replace(/^:\s*/gm, "")
       .replace(/\s+/g, " "),
+  );
+}
+
+function cleanCommunityTranscript(value: unknown): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return cleanWikiText(
+    value
+      .replace(/<noinclude>[\s\S]*?<\/noinclude>/gi, " ")
+      .replace(/<noinclude>[\s\S]*$/i, " ")
+      .replace(/\[\[Category:[^\]]+\]\]/g, " "),
   );
 }
 

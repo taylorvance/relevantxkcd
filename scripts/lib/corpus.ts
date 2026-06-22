@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, open, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { XkcdRawComic } from "../../src/lib/types";
+import type { XkcdRawComic } from "../../src/lib/types.ts";
 
 export const RAW_DATA_DIR = "raw_data";
 export const XKCD_DIR = path.join(RAW_DATA_DIR, "xkcd");

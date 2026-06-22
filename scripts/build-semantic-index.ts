@@ -4,8 +4,8 @@ import path from "node:path";
 
 import { env, pipeline } from "@huggingface/transformers";
 
-import type { SemanticIndexFile } from "../src/lib/semantic";
-import type { ComicRecord } from "../src/lib/types";
+import type { SemanticIndexFile } from "../src/lib/semantic.ts";
+import type { ComicRecord } from "../src/lib/types.ts";
 
 const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
 const DEFAULT_RECORDS = "public/search-index.json";
@@ -23,8 +23,6 @@ function semanticText(record: ComicRecord): string {
     record.alt,
     record.transcript,
     record.communityTranscript,
-    record.explainReferences ?? "",
-    record.explanation ?? "",
   ]
     .filter(Boolean)
     .join(". ")

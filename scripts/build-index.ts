@@ -2,8 +2,8 @@ import { existsSync } from "node:fs";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { normalizeXkcdRecord } from "../src/lib/normalize";
-import type { ComicRecord, ExplainXkcdRawPage, XkcdRawComic } from "../src/lib/types";
+import { normalizeXkcdRecord } from "../src/lib/normalize.ts";
+import type { ComicRecord, ExplainXkcdRawPage, XkcdRawComic } from "../src/lib/types.ts";
 
 const DEFAULT_RAW_DIR = "raw_data/xkcd";
 const DEFAULT_EXPLAIN_DIR = "raw_data/explainxkcd";
@@ -80,7 +80,6 @@ async function main(): Promise<void> {
 function toPublicRecord(record: ComicRecord): ComicRecord {
   const publicRecord = { ...record };
 
-  delete publicRecord.explanation;
   delete publicRecord.searchText;
 
   return publicRecord;

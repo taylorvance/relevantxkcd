@@ -38,6 +38,7 @@ describe("blendSearchResults", () => {
         score: 1200,
         excerpt: "Automation",
         excerptSource: "title",
+        matchSource: "title",
         matchedFields: ["title"],
       },
     ];
@@ -68,8 +69,6 @@ function record(num: number, title: string): ComicRecord {
     alt: "",
     transcript: "",
     communityTranscript: "",
-    explanation: "",
-    explainReferences: "",
     explainUrl: `https://www.explainxkcd.com/wiki/index.php/${num}`,
     searchText: title,
     sourceFlags: ["xkcd"],

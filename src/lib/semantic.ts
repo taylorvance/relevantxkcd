@@ -97,6 +97,7 @@ export function blendSearchResults(
       ...record,
       score: 0,
       ...buildResultExcerpt(record),
+      matchSource: "semantic",
       matchedFields: ["semantic"],
     });
   }

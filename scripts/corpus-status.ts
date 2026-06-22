@@ -5,7 +5,7 @@ import {
   fetchCurrentXkcd,
   parseArgs,
   writeManifest,
-} from "./lib/corpus";
+} from "./lib/corpus.ts";
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
