@@ -255,6 +255,91 @@ Calibration TODOs:
   after semantic refinement.
 - Revisit thresholds and weights only after measuring this calibration list.
 
+## Index Update Procedure
+
+The target deployment is a static GitHub Pages app with an automated index
+updater. Browsers load app-owned generated assets, not upstream xkcd or
+explainxkcd pages. Freshness is handled by a scheduled GitHub Actions workflow
+that checks upstream, updates generated index assets, validates them, and
+publishes them.
+
+The updater should run every six hours and also support manual
+`workflow_dispatch`. This is a freshness target, not a runtime feature: the app
+itself should not poll xkcd or explainxkcd.
+
+### Deployment State
+
+The published generated index is the updater's durable baseline state. Scheduled
+automation should not require a complete `raw_data/` snapshot. A routine update
+starts from the currently published search index, fetches new and recent source
+records, normalizes them, and upserts the generated records.
+
+Complete raw snapshots are not deployment state. They may exist as private
+maintainer archives for full rebuilds, source debugging, or ranking experiments,
+but they should not be published as app assets and should not be required for the
+scheduled updater.
+
+### Update Flow
+
+A scheduled update should:
+
+1. Read the currently published manifest and search index.
+2. Check the current xkcd metadata endpoint.
+3. Exit without publishing if there is no new xkcd comic and no recent refresh
+   work to do.
+4. Fetch any new xkcd records.
+5. Refresh a bounded recent explainxkcd window so wiki lag or early corrections
+   are picked up. Start with the last 10-20 comics or the last 14-21 days.
+6. Normalize fetched records and upsert them into the generated search index.
+7. Rebuild the semantic asset from the resulting search records.
+8. Validate schema versions, record counts, sorted comic numbers, source
+   attribution fields, semantic vector length, semantic model metadata, and
+   lexical/semantic alignment.
+9. Run the normal verification command.
+10. Publish generated assets only after validation succeeds.
+
+If an old comic needs a source correction outside the recent refresh window,
+treat that as a deliberate maintainer-triggered rebuild or targeted refresh, not
+part of the routine schedule.
+
+### Index Shape
+
+Use monolithic generated assets until measurements justify more complexity:
+
+- one search-record asset
+- one semantic/vector asset
+- one small manifest or equivalent build metadata tying the assets together
+
+The manifest should identify the build, schema versions, generated time, latest
+comic number, record count, content hashes, and semantic model metadata. The
+important contract is that the lexical and semantic assets are validated as one
+compatible release. If the semantic asset is missing, unsupported, or does not
+match the search records, the app should continue with lexical-only internals
+without exposing a user-facing mode switch.
+
+Do not shard the index initially. Revisit sharding only if compressed index
+payloads grow to roughly 10-20 MB, or if measured mobile startup performance is
+poor. At the current corpus size, monolithic assets are simpler and likely good
+enough.
+
+### Search UX and Evaluation
+
+Search should be one unified user experience. Users should not have to choose
+between lexical, semantic, or blended modes. The implementation can combine
+lexical and semantic evidence internally, but the visible product is one search
+box and one ranked result list.
+
+Add development-only evaluation tools before relying on automation-driven
+tuning:
+
+- a debug route or query-param overlay that compares lexical-only,
+  semantic-only, and blended results side by side
+- score and matched-field diagnostics for result inspection
+- regression tests for handpicked queries, intended comics, acceptable
+  alternatives, and notes explaining the expected behavior
+
+These tools are for maintainers, not the public search workflow.
+
 ## Acceptance Criteria
 
 Phase 1: normalization
