@@ -101,7 +101,7 @@ h2 {
 
 .search-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(136px, auto) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(136px, auto) auto;
   gap: 8px;
   align-items: center;
   border: 1.5px solid #000000;
@@ -164,27 +164,6 @@ h2 {
   font-size: 0.9rem;
   font-weight: 800;
   text-align: right;
-}
-
-.semantic-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 32px;
-  border: 1.5px solid #333333;
-  border-radius: 5px;
-  background: #6e7b91;
-  color: #ffffff;
-  padding: 0 12px;
-  gap: 8px;
-  font-weight: 850;
-  cursor: pointer;
-}
-
-.semantic-toggle input {
-  width: 18px;
-  height: 18px;
-  accent-color: #ffffff;
 }
 
 .search-status {

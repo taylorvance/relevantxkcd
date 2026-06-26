@@ -95,6 +95,20 @@ Generate the public search index:
 npm run generate:index
 ```
 
+Generate or validate the public index manifest:
+
+```sh
+npm run generate:manifest
+npm run validate:index
+```
+
+Refresh the generated public index from the current published index plus new and
+recent upstream records:
+
+```sh
+npm run update:index
+```
+
 The generator uses `raw_data/xkcd` when the local corpus is present. If the raw
 corpus is absent but `public/search-index.json` already exists, it keeps that
 checked-in public index. If neither exists, it falls back to the committed
@@ -116,6 +130,8 @@ Recommended approach:
 - commit a small fixture set for tests
 - commit/publish only the generated app assets and the minimized public search
   index
+- treat generated public indexes as the scheduled updater's durable baseline
+  state, not complete raw snapshots
 - use explainxkcd-derived transcript text as lower-weight supplemental search
   text, with normal transcript weight when xkcd does not provide a transcript
   and with provenance and attribution preserved

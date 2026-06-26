@@ -36,8 +36,7 @@ export function App() {
   const [selected, setSelected] = useState<ComicRecord | null>(null);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [copied, setCopied] = useState(false);
-  const [semanticEnabled, setSemanticEnabled] = useState(false);
-  const [semanticStatus, setSemanticStatus] = useState("");
+  const [refineStatus, setRefineStatus] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [resultScroll, setResultScroll] = useState({
     max: 0,
@@ -66,7 +65,7 @@ export function App() {
 
       if (message.type === "status") {
         if (message.id === requestIdRef.current) {
-          setSemanticStatus(message.status ?? "");
+          setRefineStatus(message.status ?? "");
         }
         return;
       }
@@ -80,7 +79,7 @@ export function App() {
         if (message.count !== undefined) {
           setComicCount(message.count);
         }
-        setSemanticStatus(message.status ?? "");
+        setRefineStatus(message.status ?? "");
         setIsSearching(false);
 
         const first = message.results?.[0] ?? null;
@@ -97,7 +96,7 @@ export function App() {
 
       if (message.type === "error") {
         console.error(message.error);
-        setSemanticStatus(message.error ?? "Search unavailable");
+        setRefineStatus(message.error ?? "Search unavailable");
         setIsSearching(false);
       }
     };
@@ -122,14 +121,13 @@ export function App() {
         id,
         type: "search",
         query,
-        semanticEnabled,
       });
     }, 90);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [query, semanticEnabled]);
+  }, [query]);
 
   useEffect(() => {
     if (!selectedNum || !workerRef.current) {
@@ -220,9 +218,8 @@ export function App() {
     return MATCH_SOURCE_LABELS[result.matchSource] ?? EXCERPT_SOURCE_LABELS[result.excerptSource];
   }
 
-  const searchBusy =
-    comicCount === 0 || isSearching || (semanticStatus !== "" && semanticStatus !== "Semantic ready");
-  const searchStatus = comicCount === 0 ? "Loading index" : semanticStatus || (isSearching ? "Searching" : "");
+  const searchBusy = comicCount === 0 || isSearching || refineStatus !== "";
+  const searchStatus = comicCount === 0 ? "Loading index" : refineStatus || (isSearching ? "Searching" : "");
   const resultScrollbarStyle = {
     "--result-scroll-thumb-size": `${Math.max(18, resultScroll.visibleRatio * 100)}%`,
   } as CSSProperties;
@@ -263,14 +260,6 @@ export function App() {
             </button>
           ) : null}
         </div>
-        <label className="semantic-toggle">
-          <input
-            checked={semanticEnabled}
-            onChange={(event) => setSemanticEnabled(event.target.checked)}
-            type="checkbox"
-          />
-          <span>Semantic</span>
-        </label>
         <div
           aria-atomic="true"
           aria-live="polite"

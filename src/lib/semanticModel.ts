@@ -14,8 +14,8 @@ export async function embedQuery(query: string): Promise<Float32Array> {
   return output.data;
 }
 
-export async function loadSemanticIndex(): Promise<SemanticIndexFile> {
-  const response = await fetch("/semantic-index.json", { cache: "no-cache" });
+export async function loadSemanticIndex(url = "/semantic-index.json"): Promise<SemanticIndexFile> {
+  const response = await fetch(url, { cache: "no-cache" });
 
   if (!response.ok) {
     throw new Error(`Semantic index request failed: ${response.status}`);
