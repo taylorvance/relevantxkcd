@@ -366,6 +366,18 @@ h2 {
   text-align: center;
 }
 
+.attribution a {
+  color: #1f3f78;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.attribution a:hover,
+.attribution a:focus-visible {
+  color: #000000;
+}
+
 @media (max-width: 820px) {
   .app-shell {
     padding: 8px;

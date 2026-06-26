@@ -354,9 +354,32 @@ export function App() {
       </section>
 
       <footer className="attribution">
-        xkcd content is by Randall Munroe and licensed under CC BY-NC 2.5.
-        Search may also use explainxkcd text, licensed under CC BY-SA 3.0, with
-        source links on matched comics. Comic images load from xkcd image URLs.
+        <span>
+          Unofficial, noncommercial tool.{" "}
+          <a href="https://xkcd.com/" target="_blank" rel="noreferrer">
+            xkcd
+          </a>{" "}
+          content is by Randall Munroe and licensed under{" "}
+          <a href="https://creativecommons.org/licenses/by-nc/2.5/" target="_blank" rel="noreferrer">
+            CC BY-NC 2.5
+          </a>
+          .
+        </span>{" "}
+        <span>
+          Search may also use{" "}
+          <a href="https://www.explainxkcd.com/wiki/" target="_blank" rel="noreferrer">
+            explainxkcd
+          </a>{" "}
+          transcript text under{" "}
+          <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noreferrer">
+            CC BY-SA 3.0
+          </a>
+          , with source links on matched comics.
+        </span>{" "}
+        <span>
+          Comic images load from xkcd image URLs. This project is not affiliated
+          with or endorsed by xkcd or explainxkcd.
+        </span>
       </footer>
     </main>
   );
