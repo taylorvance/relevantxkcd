@@ -69,10 +69,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/search-index.json public/semantic-index.json public/index-manifest.json
-          git commit \
-            -m "Update generated xkcd search index" \
-            -m "- Refresh new and recent upstream records" \
-            -m "- Rebuild semantic index and manifest"
+          git commit -m "Update generated xkcd search index"
           git push
 
       - name: Configure Pages
