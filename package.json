@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
-    "@taylorvance/tv-shared-web": "^0.7.2",
+    "@taylorvance/tv-shared-web": "^0.8.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1"
   },

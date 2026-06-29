@@ -1,4 +1,4 @@
-import { writeClipboardText } from "@taylorvance/tv-shared-web";
+import { BrandBadge, SourceBadge, writeClipboardText } from "@taylorvance/tv-shared-web";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 
@@ -355,6 +355,22 @@ export function App() {
       </section>
 
       <footer className="attribution">
+        <div className="footer-links">
+          <SourceBadge
+            aria-label="Open Relevant xkcd source repository on GitHub"
+            className="source-badge"
+            href="https://github.com/taylorvance/relevantxkcd"
+            iconClassName="source-badge-icon"
+            labelClassName="source-badge-label"
+            unstyled
+          />
+          <BrandBadge
+            className="brand-badge"
+            iconClassName="brand-badge-icon"
+            labelClassName="brand-badge-label"
+            unstyled
+          />
+        </div>
         <span>
           Unofficial, noncommercial tool.{" "}
           <a href="https://xkcd.com/" target="_blank" rel="noreferrer">
