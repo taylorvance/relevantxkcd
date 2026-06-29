@@ -6,6 +6,7 @@ export interface SemanticIndexFile {
   dimensions: number;
   scale: number;
   nums: number[];
+  contentHashes?: string[];
   vectors: string;
 }
 

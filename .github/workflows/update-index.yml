@@ -39,6 +39,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Preserve previous indexes
+        run: |
+          mkdir -p "$RUNNER_TEMP/relevantxkcd"
+          cp public/search-index.json "$RUNNER_TEMP/relevantxkcd/search-index.previous.json"
+          if [ -f public/semantic-index.json ]; then
+            cp public/semantic-index.json "$RUNNER_TEMP/relevantxkcd/semantic-index.previous.json"
+          fi
+
       - name: Refresh public search index
         run: npm run update:index -- --recent-count=10
 
@@ -53,7 +61,11 @@ jobs:
 
       - name: Rebuild semantic index and manifest
         if: steps.search.outputs.changed == 'true'
-        run: npm run generate:semantic
+        run: |
+          node scripts/build-semantic-index.ts \
+            --previous-records "$RUNNER_TEMP/relevantxkcd/search-index.previous.json" \
+            --previous-index "$RUNNER_TEMP/relevantxkcd/semantic-index.previous.json"
+          npm run generate:manifest
 
       - name: Validate generated indexes
         if: steps.search.outputs.changed == 'true'

@@ -11,6 +11,7 @@ import {
 import type { IndexManifestFile } from "../src/lib/indexManifest.ts";
 import type { SemanticIndexFile } from "../src/lib/semantic.ts";
 import type { ComicRecord } from "../src/lib/types.ts";
+import { semanticTextHash } from "./lib/semantic-index.ts";
 
 const DEFAULT_MANIFEST = "public/index-manifest.json";
 
@@ -110,6 +111,14 @@ async function validateSemantic(manifest: IndexManifestFile): Promise<void> {
   const expectedVectorLength = semantic.nums.length * semantic.dimensions;
 
   assertEqual(vectorLength, expectedVectorLength, "semantic vector byte length");
+
+  if (semantic.contentHashes !== undefined) {
+    assertEqual(semantic.contentHashes.length, records.length, "semantic contentHashes length");
+
+    records.forEach((record, index) => {
+      assertEqual(semantic.contentHashes?.[index], semanticTextHash(record), `semantic content hash #${record.num}`);
+    });
+  }
 }
 
 function publicPath(url: string): string {

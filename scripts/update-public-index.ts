@@ -9,6 +9,7 @@ import {
   fetchJson,
   parseArgs,
 } from "./lib/corpus.ts";
+import { publicRecordChangeLabel } from "./lib/public-index.ts";
 
 const DEFAULT_SEARCH_INDEX = "public/search-index.json";
 const DEFAULT_RECENT_COUNT = 10;
@@ -52,7 +53,7 @@ async function main(): Promise<void> {
     if (JSON.stringify(previous) !== JSON.stringify(next)) {
       recordsByNum.set(num, next);
       changed = true;
-      console.log(`Updated #${num} ${next.title}`);
+      console.log(`${publicRecordChangeLabel(previous)} #${num} ${next.title}`);
     } else {
       console.log(`Unchanged #${num} ${next.title}`);
     }

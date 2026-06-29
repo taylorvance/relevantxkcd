@@ -102,6 +102,17 @@ npm run generate:manifest
 npm run validate:index
 ```
 
+Generate the semantic index:
+
+```sh
+npm run generate:semantic
+```
+
+Semantic generation reuses existing vectors when their per-record semantic text
+hashes still match the current search index. The scheduled updater also keeps a
+temporary copy of the previous search and semantic assets so the first run after
+older semantic index formats can still avoid recomputing unchanged vectors.
+
 Refresh the generated public index from the current published index plus new and
 recent upstream records:
 
