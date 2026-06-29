@@ -285,7 +285,7 @@ function recentRecords(): SearchResult[] {
         ...record,
         score: 0,
         ...excerpt,
-        matchSource: excerpt.excerptSource,
+        matchSource: "recent",
         matchedFields: [],
       };
     });

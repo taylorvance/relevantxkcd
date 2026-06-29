@@ -17,6 +17,7 @@ const MATCH_SOURCE_LABELS: Record<SearchResult["matchSource"], string> = {
   transcript: "Transcript match",
   communityTranscript: "Transcript match",
   semantic: "Semantic match",
+  recent: "Recent",
 };
 
 interface WorkerResponse {

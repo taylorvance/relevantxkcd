@@ -132,6 +132,15 @@ h2 {
   box-shadow: 0 0 0 2px #96a8c8;
 }
 
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration,
+.search-input::-webkit-search-results-button,
+.search-input::-webkit-search-results-decoration {
+  display: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
 .clear-search-button {
   position: absolute;
   top: 50%;

@@ -57,4 +57,4 @@ export type ExcerptSource =
   | "communityTranscript"
   | "title";
 
-export type MatchSource = ExcerptSource | "semantic";
+export type MatchSource = ExcerptSource | "semantic" | "recent";
