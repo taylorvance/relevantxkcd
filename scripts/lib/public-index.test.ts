@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
 
 import type { ComicRecord } from "../../src/lib/types";
-import { publicRecordChangeLabel } from "./public-index.ts";
+import { formatPublicRecords, publicRecordChangeLabel } from "./public-index.ts";
+
+describe("formatPublicRecords", () => {
+  it("writes valid JSON with one comic record per line", () => {
+    const formatted = formatPublicRecords([record(1), record(2)]);
+
+    expect(formatted).toBe(
+      `[\n${JSON.stringify(record(1))},\n${JSON.stringify(record(2))}\n]\n`,
+    );
+    expect(JSON.parse(formatted)).toEqual([record(1), record(2)]);
+  });
+
+  it("formats an empty public index as an empty array", () => {
+    expect(formatPublicRecords([])).toBe("[]\n");
+  });
+});
 
 describe("publicRecordChangeLabel", () => {
   it("labels missing baseline records as added", () => {

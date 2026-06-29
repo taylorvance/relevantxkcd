@@ -5,11 +5,10 @@
   "license": "SEE LICENSE IN LICENSE.md",
   "type": "module",
   "scripts": {
-    "dev": "npm run generate:index && vite",
-    "build": "npm run generate:index && tsc -b && vite build",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
     "corpus:fetch": "node scripts/fetch-corpus.ts",
     "corpus:status": "node scripts/corpus-status.ts",
-    "generate:index": "node scripts/build-index.ts && node scripts/build-index-manifest.ts",
     "generate:manifest": "node scripts/build-index-manifest.ts",
     "generate:semantic": "node scripts/build-semantic-index.ts && node scripts/build-index-manifest.ts",
     "update:index": "node scripts/update-public-index.ts",

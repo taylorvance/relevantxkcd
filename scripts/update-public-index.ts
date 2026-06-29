@@ -9,7 +9,7 @@ import {
   fetchJson,
   parseArgs,
 } from "./lib/corpus.ts";
-import { publicRecordChangeLabel } from "./lib/public-index.ts";
+import { formatPublicRecords, publicRecordChangeLabel } from "./lib/public-index.ts";
 
 const DEFAULT_SEARCH_INDEX = "public/search-index.json";
 const DEFAULT_RECENT_COUNT = 10;
@@ -66,7 +66,7 @@ async function main(): Promise<void> {
 
   const nextRecords = Array.from(recordsByNum.values()).sort((a, b) => a.num - b.num);
 
-  await writeFile(outputPath, `${JSON.stringify(nextRecords)}\n`);
+  await writeFile(outputPath, formatPublicRecords(nextRecords));
   console.log(`Wrote ${nextRecords.length} records to ${outputPath}`);
 }
 

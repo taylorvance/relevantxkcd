@@ -1,19 +1,19 @@
 {
   "schema": "index-manifest@1",
-  "buildId": "20260629T120159-3264-78ce1f7c",
-  "generatedAt": "2026-06-29T12:01:59.382Z",
+  "buildId": "20260629T152510-3264-2d1e683d",
+  "generatedAt": "2026-06-29T15:25:10.209Z",
   "corpus": {
     "latestNum": 3264,
     "recordCount": 3263,
-    "contentHash": "sha256-78ce1f7cae40cd9ca1771fba0cb45756c6837a10394d009ca4a1987b27decacc",
+    "contentHash": "sha256-2d1e683db2f13f47c9abc498ba4d586fd0abe0052b941e6613215a51f84057b0",
     "numsHash": "sha256-1a9865d41c473323a8653d9ba947cffdd2385f7569966845b2bd95f66c45c382"
   },
   "assets": {
     "search": {
       "schema": "comic-record-array@1",
       "url": "/search-index.json",
-      "sha256": "sha256-78ce1f7cae40cd9ca1771fba0cb45756c6837a10394d009ca4a1987b27decacc",
-      "bytes": 5986390,
+      "sha256": "sha256-2d1e683db2f13f47c9abc498ba4d586fd0abe0052b941e6613215a51f84057b0",
+      "bytes": 5989654,
       "recordCount": 3263
     },
     "semantic": {

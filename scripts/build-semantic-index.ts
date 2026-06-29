@@ -43,7 +43,7 @@ async function main(): Promise<void> {
   const options = parseOptions(process.argv.slice(2));
 
   if (!existsSync(options.recordsPath)) {
-    throw new Error(`Search index not found at ${options.recordsPath}. Run npm run generate:index first.`);
+    throw new Error(`Search index not found at ${options.recordsPath}. Run npm run update:index first.`);
   }
 
   const records = JSON.parse(await readFile(options.recordsPath, "utf8")) as ComicRecord[];

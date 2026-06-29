@@ -27,7 +27,7 @@ architecture. See `SPEC.md` for the implementation plan.
 ## MVP Direction
 
 - Build a Vite + React + TypeScript static app.
-- Generate a minimized search index from local corpus data.
+- Use checked-in generated search assets as the static app's build input.
 - Keep search client-side unless measured relevance, index size, or latency
   proves that a server/API is needed.
 - Display xkcd images from their remote image URLs (or iframes).
@@ -89,12 +89,6 @@ Build the static app:
 npm run build
 ```
 
-Generate the public search index:
-
-```sh
-npm run generate:index
-```
-
 Generate or validate the public index manifest:
 
 ```sh
@@ -120,10 +114,13 @@ recent upstream records:
 npm run update:index
 ```
 
-The generator uses `raw_data/xkcd` when the local corpus is present. If the raw
-corpus is absent but `public/search-index.json` already exists, it keeps that
-checked-in public index. If neither exists, it falls back to the committed
-fixture set in `fixtures/xkcd`.
+Normal development, builds, verification, CI, and deployment use the checked-in
+public index. Ignored `raw_data/` snapshots are maintainer archives for source
+debugging and experiments, not default build inputs.
+
+`public/search-index.json` is a valid JSON array formatted with one comic record
+per line. This keeps browser loading simple while making generated index diffs
+reviewable.
 
 Corpus fetch commands are foreground-only and safe to interrupt. They write
 ignored progress logs under `raw_data/runs/`, update `raw_data/manifest.json`,
