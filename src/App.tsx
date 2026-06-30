@@ -394,8 +394,8 @@ export function App() {
           , with source links on matched comics.
         </span>{" "}
         <span>
-          Comic images load from xkcd image URLs. This project is not affiliated
-          with or endorsed by xkcd or explainxkcd.
+          Comic images load from xkcd image URLs. This is an independent project
+          and is not affiliated with xkcd or explainxkcd.
         </span>
       </footer>
     </main>

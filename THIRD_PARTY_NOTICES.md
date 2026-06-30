@@ -1,8 +1,7 @@
 # Third-Party Notices
 
-Relevant xkcd is an unofficial, noncommercial search and sharing tool. This
-project is not affiliated with, endorsed by, or sponsored by xkcd or
-explainxkcd.
+Relevant xkcd is an unofficial, noncommercial search and sharing tool. It is an
+independent project and is not affiliated with xkcd or explainxkcd.
 
 Third-party content remains under its original license. The project license in
 `LICENSE.md` does not relicense third-party content or generated data derived

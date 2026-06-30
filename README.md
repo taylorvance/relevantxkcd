@@ -1,185 +1,60 @@
 # Relevant xkcd
 
-Relevant xkcd is a web-first search and sharing tool for finding the xkcd comic
-that fits a conversation.
+Relevant xkcd is an unofficial, noncommercial web app for finding the xkcd
+comic that fits a conversation.
 
-The product goal is simple:
+Search by a remembered phrase, idea, title, alt text, or visible comic text,
+then open or share the canonical comic page.
 
-> If I remember the concept, can I find the comic I want to send?
+## Attribution
 
-The first version should be a static web app with a fast search box, ranked
-results, comic detail, and a copy-link action. Direct iMessage integration is
-out of scope until search quality is useful.
+Relevant xkcd is an independent project and is not affiliated with xkcd or
+explainxkcd.
 
-## Current State
+xkcd comics and accompanying text are created by Randall Munroe and licensed
+under Creative Commons Attribution-NonCommercial 2.5. Some supplemental search
+text may come from explainxkcd, which is generally licensed under Creative
+Commons Attribution-ShareAlike 3.0.
 
-This repo currently contains rough corpus tooling:
+The app links back to canonical xkcd pages, loads comic images from xkcd image
+URLs, and preserves source links for community transcript data when present. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the full third-party
+notice.
 
-- `fetcher.py` downloads xkcd metadata and explainxkcd wiki pages into
-  `raw_data/`.
-- `collater.py` sketches a normalized comic record from those raw files.
-- `raw_data/` and `processed_data/` are local/generated data and are ignored by
-  git.
+## Features
 
-The local corpus is useful prior work, but the scripts are not the target
-architecture. See `SPEC.md` for the implementation plan.
-
-## MVP Direction
-
-- Build a Vite + React + TypeScript static app.
-- Use checked-in generated search assets as the static app's build input.
-- Keep search client-side unless measured relevance, index size, or latency
-  proves that a server/API is needed.
-- Display xkcd images from their remote image URLs (or iframes).
-- Share by copying the canonical `https://xkcd.com/<num>/` link for MVP.
-- Attribute xkcd and link back to canonical comic pages.
-
-Static search is the first implementation target, not a permanent constraint.
-If a tested lexical baseline cannot find the right comic often enough, a search
-API, offline embeddings, or a hosted vector database can be revisited with an
-explicit maintenance and deployment tradeoff.
+- Client-side search across xkcd titles, alt text, transcripts, and visible
+  comic text.
+- Search runs entirely in the browser; there is no app server.
+- Ranked results with comic images, publication dates, and source links.
+- Comic detail view with the canonical xkcd URL ready to copy or open.
+- Links back to xkcd and explainxkcd where applicable.
 
 ## Development
 
-Install dependencies:
-
 ```sh
 npm install
-```
-
-Run tests:
-
-```sh
+npm run dev
 npm test
-```
-
-Run the full local verification path:
-
-```sh
 npm run verify
-```
-
-Check local corpus status without network:
-
-```sh
-npm run corpus:status -- --offline
-```
-
-Check local corpus status against the current xkcd API:
-
-```sh
-npm run corpus:status
-```
-
-Fetch missing recent comics with respectful, resumable requests:
-
-```sh
-npm run corpus:fetch -- --recent
-```
-
-Fetch an explicit bounded range:
-
-```sh
-npm run corpus:fetch -- --range 3025-3035
-```
-
-Build the static app:
-
-```sh
 npm run build
 ```
 
-Generate or validate the public index manifest:
+Routine development, builds, verification, CI, and deployment use the checked-in
+public search assets under `public/`.
+
+Useful maintenance scripts:
 
 ```sh
-npm run generate:manifest
 npm run validate:index
-```
-
-Generate the semantic index:
-
-```sh
+npm run update:index
 npm run generate:semantic
 ```
 
-Semantic generation reuses existing vectors when their per-record semantic text
-hashes still match the current search index. The scheduled updater also keeps a
-temporary copy of the previous search and semantic assets so the first run after
-older semantic index formats can still avoid recomputing unchanged vectors.
-
-Refresh the generated public index from the current published index plus new and
-recent upstream records:
-
-```sh
-npm run update:index
-```
-
-Normal development, builds, verification, CI, and deployment use the checked-in
-public index. Ignored `raw_data/` snapshots are maintainer archives for source
-debugging and experiments, not default build inputs.
-
-`public/search-index.json` is a valid JSON array formatted with one comic record
-per line. This keeps browser loading simple while making generated index diffs
-reviewable.
-
-Corpus fetch commands are foreground-only and safe to interrupt. They write
-ignored progress logs under `raw_data/runs/`, update `raw_data/manifest.json`,
-and skip files that already exist unless `--refresh` is passed. Fetching is
-single-threaded by default and waits at least 1500 ms between requests to the
-same source.
-
-## Corpus Policy
-
-Do not commit the full raw corpus by default.
-
-Recommended approach:
-
-- keep `raw_data/` ignored as local source snapshots
-- commit a small fixture set for tests
-- commit/publish only the generated app assets and the minimized public search
-  index
-- treat generated public indexes as the scheduled updater's durable baseline
-  state, not complete raw snapshots
-- use explainxkcd-derived transcript text as lower-weight supplemental search
-  text, with normal transcript weight when xkcd does not provide a transcript
-  and with provenance and attribution preserved
-
-The full raw corpus is around tens of megabytes and changes over time. Keeping
-it out of git avoids noisy vendor-data churn and reduces the chance of
-accidentally redistributing source text without the correct attribution/license
-surface.
-
 ## Licensing
 
-Original project code is MIT licensed. See `LICENSE.md`.
+Original project code is MIT licensed. See [LICENSE.md](LICENSE.md).
 
-This does not relicense third-party content or generated data derived from
-third-party content. See `THIRD_PARTY_NOTICES.md` for the full notice.
-
-xkcd comics and accompanying text are licensed under Creative Commons
-Attribution-NonCommercial 2.5:
-
-- https://xkcd.com/license.html
-- https://creativecommons.org/licenses/by-nc/2.5/
-
-explainxkcd wiki content is generally licensed under Creative Commons
-Attribution-ShareAlike 3.0:
-
-- https://www.explainxkcd.com/wiki/index.php/explain_xkcd:Copyrights
-- https://creativecommons.org/licenses/by-sa/3.0/
-
-This project should treat license compliance as an implementation requirement,
-not an afterthought. For MVP, the safest public index is based on xkcd-provided
-metadata and links. explainxkcd content can be used locally while the public
-redistribution plan is made explicit.
-
-Because public indexes currently include xkcd-derived content and explainxkcd
-transcript text, public use of the app and repository should remain
-noncommercial and should preserve attribution, source links, and upstream
-license notices.
-
-## Reference
-
-This project was incubated in the sibling Idealog repo:
-
-- `../idealog/specs/relevant-xkcd.md`
+That license does not relicense third-party content or generated data derived
+from third-party content. Public use of this project should remain
+noncommercial while it includes xkcd-derived content.
