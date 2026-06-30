@@ -146,11 +146,17 @@ function scoreRecord(
     score += 60;
   }
 
+  const matchSource = pickMatchSource(matchedFields);
+
   return {
     ...record,
     score,
-    ...buildResultExcerpt(record, query.tokens),
-    matchSource: pickMatchSource(matchedFields),
+    ...buildResultExcerpt(
+      record,
+      unique([...query.tokens, ...query.phrases.flatMap(tokenize)]),
+      matchSource,
+    ),
+    matchSource,
     matchedFields: Array.from(matchedFields),
   };
 }
@@ -165,8 +171,53 @@ function pickMatchSource(matchedFields: Set<string>): MatchSource {
   return "title";
 }
 
-export function buildResultExcerpt(record: ComicRecord, tokens: string[] = []): Excerpt {
-  const fields = getExcerptCandidates(record);
+export function buildResultExcerpt(
+  record: ComicRecord,
+  tokens: string[] = [],
+  matchSource?: MatchSource,
+): Excerpt {
+  if (matchSource === "title") {
+    return buildContextExcerpt(record);
+  }
+
+  if (
+    matchSource === "alt" ||
+    matchSource === "transcript" ||
+    matchSource === "communityTranscript"
+  ) {
+    return buildFieldMatchExcerpt(record, tokens, matchSource);
+  }
+
+  return buildContextExcerpt(record);
+}
+
+function buildFieldMatchExcerpt(
+  record: ComicRecord,
+  tokens: string[],
+  source: ExcerptSource,
+): Excerpt {
+  const value = record[source];
+  const field = { source, value };
+  const excerpt = findMatchingExcerpt([field], tokens);
+
+  if (excerpt) {
+    return excerpt;
+  }
+
+  if (cleanExcerpt(value).length > 0) {
+    return {
+      excerpt: truncate(cleanExcerpt(value), 190),
+      excerptSource: source,
+    };
+  }
+
+  return buildContextExcerpt(record);
+}
+
+function findMatchingExcerpt(
+  fields: ExcerptCandidate[],
+  tokens: string[],
+): Excerpt | null {
   const tokenSet = new Set(tokens);
 
   for (const field of fields) {
@@ -183,26 +234,22 @@ export function buildResultExcerpt(record: ComicRecord, tokens: string[] = []): 
     }
   }
 
-  const fallback = fields[0] ?? {
-    source: "title" as const,
-    value: record.title,
-  };
-
-  return {
-    excerpt: truncate(cleanExcerpt(fallback.value), 190),
-    excerptSource: fallback.source,
-  };
+  return null;
 }
 
-function getExcerptCandidates(record: ComicRecord): ExcerptCandidate[] {
-  const candidates: ExcerptCandidate[] = [
+function buildContextExcerpt(record: ComicRecord): Excerpt {
+  const contextualFields: ExcerptCandidate[] = [
     { source: "alt", value: record.alt },
-    { source: "transcript", value: record.transcript },
-    { source: "communityTranscript", value: record.communityTranscript },
     { source: "title", value: record.title },
   ];
+  const excerpt = contextualFields.find(
+    (field) => cleanExcerpt(field.value).length > 0,
+  ) ?? { source: "title" as const, value: record.title };
 
-  return candidates.filter((field) => cleanExcerpt(field.value).length > 0);
+  return {
+    excerpt: truncate(cleanExcerpt(excerpt.value), 190),
+    excerptSource: excerpt.source,
+  };
 }
 
 function normalizeForComparison(value: string): string {

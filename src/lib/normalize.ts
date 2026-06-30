@@ -10,6 +10,14 @@ const MOJIBAKE_REPLACEMENTS: Array<[string, string]> = [
   ["\u00e2\u0080\u00a6", "..."],
 ];
 
+const WIKI_TEMPLATE_NOISE = new Set([
+  "actual citation needed",
+  "citation needed",
+  "cn",
+  "fact",
+  "incomplete",
+]);
+
 export function normalizeXkcdRecord(
   raw: XkcdRawComic,
   explainRaw?: ExplainXkcdRawPage | null,
@@ -22,7 +30,7 @@ export function normalizeXkcdRecord(
 
   const title = cleanText(raw.safe_title || raw.title || `xkcd ${num}`);
   const alt = cleanText(raw.alt);
-  const transcript = cleanText(raw.transcript);
+  const transcript = cleanMultilineText(raw.transcript);
   const published = formatDate(raw.year, raw.month, raw.day);
   const imageUrl = String(raw.img || "");
   const canonicalUrl = `https://xkcd.com/${num}/`;
@@ -81,13 +89,31 @@ export function cleanText(value: unknown): string {
     return "";
   }
 
+  return repairMojibake(value).replace(/\s+/g, " ").trim();
+}
+
+export function cleanMultilineText(value: unknown): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return repairMojibake(value)
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+/g, " ").trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function repairMojibake(value: string): string {
   let text = value;
 
   for (const [from, to] of MOJIBAKE_REPLACEMENTS) {
     text = text.split(from).join(to);
   }
 
-  return text.replace(/\s+/g, " ").trim();
+  return text;
 }
 
 export function cleanWikiText(value: unknown): string {
@@ -100,16 +126,36 @@ export function cleanWikiText(value: unknown): string {
     (_match, target: string, label?: string) => label ?? target,
   );
 
-  return cleanText(
+  return cleanMultilineText(
     expandedLinks
-      .replace(/\{\{[^}]+\}\}/g, " ")
+      .replace(/\{\{([^{}]+)\}\}/g, expandWikiTemplate)
       .replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, "$2")
       .replace(/\[\[([^\]]+)\]\]/g, "$1")
       .replace(/\[(https?:\/\/[^\s\]]+)\s+([^\]]+)\]/g, "$2")
       .replace(/'{2,}/g, "")
       .replace(/^:\s*/gm, "")
-      .replace(/\s+/g, " "),
+      .replace(/[ \t]+/g, " "),
   );
+}
+
+function expandWikiTemplate(match: string, content: string): string {
+  const parts = content
+    .split("|")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const name = parts[0]?.toLowerCase() ?? "";
+
+  if (!name || WIKI_TEMPLATE_NOISE.has(name)) {
+    return " ";
+  }
+
+  if (name === "frac" && parts.length >= 3) {
+    return `${parts[1]}/${parts[2]}`;
+  }
+
+  const payload = parts.slice(1).join(" ");
+
+  return payload || match;
 }
 
 function cleanCommunityTranscript(value: unknown): string {

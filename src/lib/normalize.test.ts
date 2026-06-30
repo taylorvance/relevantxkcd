@@ -27,6 +27,15 @@ describe("normalizeXkcdRecord", () => {
     expect(record?.slug).toBe("is-it-worth-the-time");
   });
 
+  it("preserves transcript line breaks for display", () => {
+    const record = normalizeXkcdRecord(comic1205);
+
+    expect(record?.transcript).toContain(
+      "How long can you work on making a routine task more efficient before you're spending more time than you save? (Across five years)\n\n[[A table",
+    );
+    expect(record?.searchText).toContain("\n\n[[A table");
+  });
+
   it("does not require transcript or explainxkcd data", () => {
     const record = normalizeXkcdRecord({
       num: 99999,

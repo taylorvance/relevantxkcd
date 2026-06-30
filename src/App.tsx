@@ -2,10 +2,11 @@ import { BrandBadge, SourceBadge, writeClipboardText } from "@taylorvance/tv-sha
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 
+import { getTranscript } from "./lib/transcript";
 import type { ComicRecord, SearchResult } from "./lib/types";
 
 const EXCERPT_SOURCE_LABELS: Record<SearchResult["excerptSource"], string> = {
-  alt: "Alt text",
+  alt: "Hover text",
   transcript: "Transcript",
   communityTranscript: "Transcript",
   title: "Title",
@@ -13,7 +14,7 @@ const EXCERPT_SOURCE_LABELS: Record<SearchResult["excerptSource"], string> = {
 
 const MATCH_SOURCE_LABELS: Record<SearchResult["matchSource"], string> = {
   title: "Title match",
-  alt: "Alt text match",
+  alt: "Hover text match",
   transcript: "Transcript match",
   communityTranscript: "Transcript match",
   semantic: "Semantic match",
@@ -224,6 +225,7 @@ export function App() {
   const resultScrollbarStyle = {
     "--result-scroll-thumb-size": `${Math.max(18, resultScroll.visibleRatio * 100)}%`,
   } as CSSProperties;
+  const selectedTranscript = selected ? getTranscript(selected) : "";
 
   return (
     <main className="app-shell">
@@ -346,7 +348,19 @@ export function App() {
                 <img src={selected.imageUrl} alt={selected.alt || selected.title} />
               </div>
 
-              {selected.alt ? <p className="alt-text">{selected.alt}</p> : null}
+              {selected.alt ? (
+                <p className="hover-text">
+                  <span className="hover-text-label">Hover text</span>
+                  {selected.alt}
+                </p>
+              ) : null}
+
+              {selectedTranscript ? (
+                <details className="transcript-details">
+                  <summary>Transcript</summary>
+                  <div className="transcript-body">{selectedTranscript}</div>
+                </details>
+              ) : null}
             </>
           ) : (
             <p className="empty-state">Loading index</p>
