@@ -1,6 +1,11 @@
 import type { ComicRecord, SearchResult } from "./types";
 import { buildResultExcerpt } from "./search.ts";
 
+const LEXICAL_BLEND_WEIGHT = 0.55;
+const SEMANTIC_BLEND_WEIGHT = 0.35;
+const OVERLAP_BLEND_WEIGHT = 0.1;
+const STRONG_LEXICAL_ANCHOR_SCORE = 300;
+
 export interface SemanticIndexFile {
   model: string;
   dimensions: number;
@@ -80,7 +85,12 @@ export function blendSearchResults(
 ): SearchResult[] {
   const recordsByNum = new Map(records.map((record) => [record.num, record]));
   const lexicalByNum = new Map(lexicalResults.map((result) => [result.num, result]));
+  const semanticByNum = new Map(semanticResults.map((result) => [result.num, result]));
   const maxLexicalScore = Math.max(1, ...lexicalResults.map((result) => result.score));
+  const anchoredNum =
+    lexicalResults[0] && lexicalResults[0].score >= STRONG_LEXICAL_ANCHOR_SCORE
+      ? lexicalResults[0].num
+      : null;
   const candidates = new Map<number, SearchResult>();
 
   for (const result of lexicalResults) {
@@ -106,18 +116,45 @@ export function blendSearchResults(
   return Array.from(candidates.values())
     .map((candidate) => {
       const lexical = lexicalByNum.get(candidate.num);
-      const semantic = semanticResults.find((result) => result.num === candidate.num);
+      const semantic = semanticByNum.get(candidate.num);
       const lexicalScore = lexical ? lexical.score / maxLexicalScore : 0;
       const semanticScore = semantic ? Math.max(0, (semantic.score + 1) / 2) : 0;
+      const overlapScore = lexical && semantic ? 1 : 0;
 
       return {
         ...candidate,
-        score: lexicalScore * 0.42 + semanticScore * 0.58,
+        score:
+          lexicalScore * LEXICAL_BLEND_WEIGHT +
+          semanticScore * SEMANTIC_BLEND_WEIGHT +
+          overlapScore * OVERLAP_BLEND_WEIGHT,
         matchedFields: Array.from(
           new Set([...candidate.matchedFields, ...(semantic ? ["semantic"] : [])]),
         ),
       };
     })
-    .sort((a, b) => b.score - a.score || a.num - b.num)
+    .sort(
+      (a, b) =>
+        compareAnchoredResult(anchoredNum, a, b) || b.score - a.score || a.num - b.num,
+    )
     .slice(0, limit);
+}
+
+function compareAnchoredResult(
+  anchoredNum: number | null,
+  a: SearchResult,
+  b: SearchResult,
+): number {
+  if (anchoredNum === null) {
+    return 0;
+  }
+
+  if (a.num === anchoredNum) {
+    return -1;
+  }
+
+  if (b.num === anchoredNum) {
+    return 1;
+  }
+
+  return 0;
 }

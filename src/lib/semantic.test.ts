@@ -56,6 +56,42 @@ describe("blendSearchResults", () => {
     expect(blended.map((result) => result.num)).toContain(1205);
     expect(blended.map((result) => result.num)).toContain(1319);
   });
+
+  it("keeps the strongest lexical result above fuzzy semantic promotions", () => {
+    const lexical: SearchResult[] = [
+      searchResult(records[0], 400),
+      searchResult(records[1], 220),
+    ];
+
+    const blended = blendSearchResults(
+      records,
+      lexical,
+      [
+        { num: 1319, score: 1 },
+        { num: 927, score: 0.98 },
+      ],
+      3,
+    );
+
+    expect(blended[0]?.num).toBe(1205);
+    expect(blended.map((result) => result.num)).toContain(927);
+  });
+
+  it("does not anchor weak lexical leaders", () => {
+    const lexical: SearchResult[] = [
+      searchResult(records[0], 200),
+      searchResult(records[1], 180),
+    ];
+
+    const blended = blendSearchResults(
+      records,
+      lexical,
+      [{ num: 1319, score: 1 }],
+      3,
+    );
+
+    expect(blended[0]?.num).toBe(1319);
+  });
 });
 
 function record(num: number, title: string): ComicRecord {
@@ -72,5 +108,16 @@ function record(num: number, title: string): ComicRecord {
     explainUrl: `https://www.explainxkcd.com/wiki/index.php/${num}`,
     searchText: title,
     sourceFlags: ["xkcd"],
+  };
+}
+
+function searchResult(record: ComicRecord, score: number): SearchResult {
+  return {
+    ...record,
+    score,
+    excerpt: record.title,
+    excerptSource: "title",
+    matchSource: "title",
+    matchedFields: ["title"],
   };
 }

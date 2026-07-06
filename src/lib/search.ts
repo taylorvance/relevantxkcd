@@ -19,9 +19,9 @@ const FIELD_WEIGHTS = {
   communityTranscriptSupplemental: 6,
   phraseTitle: 420,
   phraseAlt: 120,
-  phraseTranscript: 70,
+  phraseTranscript: 150,
   phraseCommunityTranscript: 70,
-  phraseCommunityTranscriptSupplemental: 32,
+  phraseCommunityTranscriptSupplemental: 50,
 };
 
 export function searchComics(
@@ -49,11 +49,13 @@ export function parseQuery(query: string): {
   comicNumber: number | null;
 } {
   const comicNumber = parseComicNumber(query);
-  const phrases = Array.from(query.matchAll(/"([^"]+)"/g), (match) =>
+  const quotedPhrases = Array.from(query.matchAll(/"([^"]+)"/g), (match) =>
     normalizeForComparison(match[1]),
   ).filter(Boolean);
   const normalized = normalizeForComparison(query.replace(/"[^"]+"/g, " "));
   const tokens = unique(tokenize(normalized));
+  const implicitPhrases = tokens.length > 1 && normalized ? [normalized] : [];
+  const phrases = unique([...quotedPhrases, ...implicitPhrases]);
 
   return { normalized, tokens, phrases, comicNumber };
 }

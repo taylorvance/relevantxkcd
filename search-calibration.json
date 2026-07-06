@@ -5,7 +5,8 @@
     {
       "query": "standards",
       "intent": "Exact/remembered title query should keep the canonical comic first.",
-      "expectedTop": [927]
+      "expectedTop": [927],
+      "tier": "canonical"
     },
     {
       "query": "password strength",
@@ -13,9 +14,28 @@
       "expectedTop": [936]
     },
     {
+      "query": "bobby tables",
+      "intent": "Remembered visible phrase query should find the Little Bobby Tables comic.",
+      "expectedTop": [327],
+      "tier": "canonical"
+    },
+    {
       "query": "correct horse battery staple",
       "intent": "Visible phrase query should find the password-strength comic.",
-      "expectedTop": [936]
+      "expectedTop": [936],
+      "tier": "canonical"
+    },
+    {
+      "query": "devil's advocate",
+      "intent": "Ambiguous argument-related query should surface both the exact-title comic and the intended argument comic.",
+      "expectedWithin": [164, 1432],
+      "within": 3
+    },
+    {
+      "query": "sudo list",
+      "intent": "Remembered visible phrase query should find the sudo incident comic.",
+      "expectedTop": [838],
+      "tier": "canonical"
     },
     {
       "query": "compiling",
