@@ -34,6 +34,13 @@ describe("searchComics", () => {
     expect(searchComics(records, query)[0]?.num).toBe(expectedNum);
   });
 
+  it.each(["#936", "936"])("supports comic-number lookup for %s", (query) => {
+    const [result] = searchComics(records, query);
+
+    expect(result?.num).toBe(936);
+    expect(result?.matchSource).toBe("number");
+  });
+
   it("handles vague multi-token queries by combining evidence", () => {
     const results = searchComics(records, "dependency graph");
 

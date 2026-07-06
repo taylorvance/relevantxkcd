@@ -104,13 +104,13 @@ h2 {
 
 .search-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(136px, auto);
-  gap: 8px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  align-items: stretch;
   border: 1.5px solid #000000;
   border-radius: 12px;
   background: #ffffff;
-  padding: 10px;
+  padding: 10px 10px 8px;
 }
 
 .search-box {
@@ -124,7 +124,7 @@ h2 {
   border: 1.5px solid #333333;
   border-radius: 5px;
   background: #f5f7fb;
-  padding: 0 46px 0 16px;
+  padding: 0 78px 0 16px;
   font-size: 1rem;
   font-weight: 700;
   outline: none;
@@ -145,14 +145,10 @@ h2 {
 }
 
 .clear-search-button {
-  position: absolute;
-  top: 50%;
-  right: 7px;
   display: grid;
   width: 30px;
   height: 30px;
   place-items: center;
-  transform: translateY(-50%);
   border: 1.5px solid transparent;
   border-radius: 5px;
   background: transparent;
@@ -170,17 +166,14 @@ h2 {
   outline: none;
 }
 
-.search-status {
+.search-actions {
+  position: absolute;
+  top: 50%;
+  right: 7px;
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
-  min-width: 136px;
-  min-height: 32px;
-  color: #3d4c68;
-  font-size: 0.92rem;
-  font-weight: 850;
   gap: 8px;
-  white-space: nowrap;
+  transform: translateY(-50%);
 }
 
 .status-spinner {
@@ -190,11 +183,10 @@ h2 {
   border: 2px solid #c8cdd8;
   border-top-color: #3d4c68;
   border-radius: 50%;
-  opacity: 0;
+  opacity: 1;
 }
 
-.search-status.is-active .status-spinner {
-  opacity: 1;
+.status-spinner.is-active {
   animation: status-spin 0.85s linear infinite;
 }
 
@@ -205,7 +197,7 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .search-status.is-active .status-spinner {
+  .status-spinner {
     animation: none;
   }
 }

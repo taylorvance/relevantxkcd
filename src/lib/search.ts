@@ -11,6 +11,7 @@ interface ExcerptCandidate {
 }
 
 const FIELD_WEIGHTS = {
+  number: 1800,
   title: 80,
   alt: 24,
   transcript: 14,
@@ -30,7 +31,7 @@ export function searchComics(
 ): SearchResult[] {
   const parsed = parseQuery(query);
 
-  if (!parsed.tokens.length && !parsed.phrases.length) {
+  if (!parsed.tokens.length && !parsed.phrases.length && !parsed.comicNumber) {
     return [];
   }
 
@@ -45,14 +46,16 @@ export function parseQuery(query: string): {
   normalized: string;
   tokens: string[];
   phrases: string[];
+  comicNumber: number | null;
 } {
+  const comicNumber = parseComicNumber(query);
   const phrases = Array.from(query.matchAll(/"([^"]+)"/g), (match) =>
     normalizeForComparison(match[1]),
   ).filter(Boolean);
   const normalized = normalizeForComparison(query.replace(/"[^"]+"/g, " "));
   const tokens = unique(tokenize(normalized));
 
-  return { normalized, tokens, phrases };
+  return { normalized, tokens, phrases, comicNumber };
 }
 
 export function tokenize(value: string): string[] {
@@ -78,6 +81,11 @@ function scoreRecord(
   const hasOfficialTranscript = record.transcript.trim().length > 0;
   const matchedFields = new Set<string>();
   let score = 0;
+
+  if (query.comicNumber === record.num) {
+    score += FIELD_WEIGHTS.number;
+    matchedFields.add("number");
+  }
 
   if (query.normalized && fields.title === query.normalized) {
     score += 1200;
@@ -162,7 +170,7 @@ function scoreRecord(
 }
 
 function pickMatchSource(matchedFields: Set<string>): MatchSource {
-  for (const field of ["title", "alt", "transcript", "communityTranscript"] as const) {
+  for (const field of ["number", "title", "alt", "transcript", "communityTranscript"] as const) {
     if (matchedFields.has(field)) {
       return field;
     }
@@ -176,7 +184,7 @@ export function buildResultExcerpt(
   tokens: string[] = [],
   matchSource?: MatchSource,
 ): Excerpt {
-  if (matchSource === "title") {
+  if (matchSource === "number" || matchSource === "title") {
     return buildContextExcerpt(record);
   }
 
@@ -260,6 +268,18 @@ function normalizeForComparison(value: string): string {
     .replace(/[^a-z0-9"']+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function parseComicNumber(query: string): number | null {
+  const match = query.trim().match(/^(?:#\s*)?(\d+)$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const num = Number(match[1]);
+
+  return Number.isInteger(num) && num > 0 ? num : null;
 }
 
 function stemToken(token: string): string {

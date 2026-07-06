@@ -1,4 +1,8 @@
-import { BrandBadge, SourceBadge, writeClipboardText } from "@taylorvance/tv-shared-web";
+import {
+  BrandBadge,
+  SourceBadge,
+  writeClipboardText,
+} from "@taylorvance/tv-shared-web";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 
@@ -13,6 +17,7 @@ const EXCERPT_SOURCE_LABELS: Record<SearchResult["excerptSource"], string> = {
 };
 
 const MATCH_SOURCE_LABELS: Record<SearchResult["matchSource"], string> = {
+  number: "Comic # match",
   title: "Title match",
   alt: "Hover text match",
   transcript: "Transcript match",
@@ -158,7 +163,8 @@ export function App() {
       setResultScroll({
         max: Math.max(0, scrollWidth - clientWidth),
         value: element.scrollLeft,
-        visibleRatio: scrollWidth > 0 ? Math.min(1, clientWidth / scrollWidth) : 1,
+        visibleRatio:
+          scrollWidth > 0 ? Math.min(1, clientWidth / scrollWidth) : 1,
       });
     };
 
@@ -201,7 +207,8 @@ export function App() {
     setResultScroll({
       max: Math.max(0, scrollWidth - clientWidth),
       value: element.scrollLeft,
-      visibleRatio: scrollWidth > 0 ? Math.min(1, clientWidth / scrollWidth) : 1,
+      visibleRatio:
+        scrollWidth > 0 ? Math.min(1, clientWidth / scrollWidth) : 1,
     });
   }
 
@@ -217,11 +224,13 @@ export function App() {
   }
 
   function resultMatchLabel(result: SearchResult): string {
-    return MATCH_SOURCE_LABELS[result.matchSource] ?? EXCERPT_SOURCE_LABELS[result.excerptSource];
+    return (
+      MATCH_SOURCE_LABELS[result.matchSource] ??
+      EXCERPT_SOURCE_LABELS[result.excerptSource]
+    );
   }
 
   const searchBusy = comicCount === 0 || isSearching || refineStatus !== "";
-  const searchStatus = comicCount === 0 ? "Loading index" : refineStatus || (isSearching ? "Searching" : "");
   const resultScrollbarStyle = {
     "--result-scroll-thumb-size": `${Math.max(18, resultScroll.visibleRatio * 100)}%`,
   } as CSSProperties;
@@ -245,32 +254,23 @@ export function App() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="standards, password strength, git"
+            placeholder="bobby tables, 936, standards"
             aria-label="Search xkcd comics"
           />
-          {query ? (
-            <button
-              aria-label="Clear search"
-              className="clear-search-button"
-              onClick={clearQuery}
-              title="Clear search"
-              type="button"
-            >
-              x
-            </button>
-          ) : null}
-        </div>
-        <div
-          aria-atomic="true"
-          aria-live="polite"
-          className={`search-status ${searchBusy ? "is-active" : ""}`}
-        >
-          {searchStatus ? (
-            <>
-              <span aria-hidden="true" className="status-spinner" />
-              <span>{searchStatus}</span>
-            </>
-          ) : null}
+          <div className="search-actions">
+            {searchBusy ? <span aria-hidden="true" className="status-spinner is-active" /> : null}
+            {query ? (
+              <button
+                aria-label="Clear search"
+                className="clear-search-button"
+                onClick={clearQuery}
+                title="Clear search"
+                type="button"
+              >
+                x
+              </button>
+            ) : null}
+          </div>
         </div>
       </section>
 
@@ -307,7 +307,9 @@ export function App() {
               className="result-scrollbar"
               max={resultScroll.max}
               min="0"
-              onChange={(event) => setResultScrollPosition(Number(event.target.value))}
+              onChange={(event) =>
+                setResultScrollPosition(Number(event.target.value))
+              }
               style={resultScrollbarStyle}
               type="range"
               value={Math.min(resultScroll.value, resultScroll.max)}
@@ -323,14 +325,28 @@ export function App() {
                 <div className="detail-heading">
                   <h2>{selected.title}</h2>
                   <div className="detail-actions">
-                    <button className="copy-button" onClick={copySelectedLink} type="button">
+                    <button
+                      className="copy-button"
+                      onClick={copySelectedLink}
+                      type="button"
+                    >
                       {copied ? "Copied" : "Copy link"}
                     </button>
-                    <a className="open-link" href={selected.canonicalUrl} target="_blank" rel="noreferrer">
+                    <a
+                      className="open-link"
+                      href={selected.canonicalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       Open
                     </a>
                     {selected.sourceFlags.includes("explainxkcd") ? (
-                      <a className="open-link" href={selected.explainUrl} target="_blank" rel="noreferrer">
+                      <a
+                        className="open-link"
+                        href={selected.explainUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
                         Explain
                       </a>
                     ) : null}
@@ -340,7 +356,10 @@ export function App() {
               </div>
 
               <div className="comic-frame">
-                <img src={selected.imageUrl} alt={selected.alt || selected.title} />
+                <img
+                  src={selected.imageUrl}
+                  alt={selected.alt || selected.title}
+                />
               </div>
 
               {selected.alt ? (
@@ -386,18 +405,30 @@ export function App() {
             xkcd
           </a>{" "}
           content is by Randall Munroe and licensed under{" "}
-          <a href="https://creativecommons.org/licenses/by-nc/2.5/" target="_blank" rel="noreferrer">
+          <a
+            href="https://creativecommons.org/licenses/by-nc/2.5/"
+            target="_blank"
+            rel="noreferrer"
+          >
             CC BY-NC 2.5
           </a>
           .
         </span>{" "}
         <span>
           Search may also use{" "}
-          <a href="https://www.explainxkcd.com/wiki/" target="_blank" rel="noreferrer">
+          <a
+            href="https://www.explainxkcd.com/wiki/"
+            target="_blank"
+            rel="noreferrer"
+          >
             explainxkcd
           </a>{" "}
           transcript text under{" "}
-          <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noreferrer">
+          <a
+            href="https://creativecommons.org/licenses/by-sa/3.0/"
+            target="_blank"
+            rel="noreferrer"
+          >
             CC BY-SA 3.0
           </a>
           , with source links on matched comics.
