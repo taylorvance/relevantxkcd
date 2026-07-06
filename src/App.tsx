@@ -234,9 +234,6 @@ export function App() {
           <p className="kicker">xkcd search</p>
           <h1>Relevant xkcd</h1>
         </div>
-        <a className="source-link" href="https://xkcd.com/" target="_blank" rel="noreferrer">
-          xkcd.com
-        </a>
       </header>
 
       <section className="search-row" aria-label="Search comics">
@@ -274,9 +271,6 @@ export function App() {
               <span>{searchStatus}</span>
             </>
           ) : null}
-        </div>
-        <div className="count" aria-live="polite">
-          {comicCount ? `${comicCount} comics` : ""}
         </div>
       </section>
 
@@ -325,23 +319,24 @@ export function App() {
           {selected ? (
             <>
               <div className="detail-header">
-                <div>
-                  <p className="result-meta">#{selected.num}</p>
+                <p className="detail-number result-meta">#{selected.num}</p>
+                <div className="detail-heading">
                   <h2>{selected.title}</h2>
-                </div>
-                <div className="detail-actions">
-                  <button className="copy-button" onClick={copySelectedLink} type="button">
-                    {copied ? "Copied" : "Copy link"}
-                  </button>
-                  <a className="open-link" href={selected.canonicalUrl} target="_blank" rel="noreferrer">
-                    Open
-                  </a>
-                  {selected.sourceFlags.includes("explainxkcd") ? (
-                    <a className="open-link" href={selected.explainUrl} target="_blank" rel="noreferrer">
-                      Explain
+                  <div className="detail-actions">
+                    <button className="copy-button" onClick={copySelectedLink} type="button">
+                      {copied ? "Copied" : "Copy link"}
+                    </button>
+                    <a className="open-link" href={selected.canonicalUrl} target="_blank" rel="noreferrer">
+                      Open
                     </a>
-                  ) : null}
+                    {selected.sourceFlags.includes("explainxkcd") ? (
+                      <a className="open-link" href={selected.explainUrl} target="_blank" rel="noreferrer">
+                        Explain
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
+                <span className="detail-header-spacer" aria-hidden="true" />
               </div>
 
               <div className="comic-frame">
