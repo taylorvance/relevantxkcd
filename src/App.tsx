@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { getTranscript } from "./lib/transcript";
 import type { ComicRecord, SearchResult } from "./lib/types";
+import { buildSearchQueryUrl, readUrlSearchQuery } from "./lib/urlQuery";
 
 const EXCERPT_SOURCE_LABELS: Record<SearchResult["excerptSource"], string> = {
   alt: "Hover text",
@@ -38,7 +39,10 @@ interface WorkerResponse {
 
 export function App() {
   const [comicCount, setComicCount] = useState(0);
-  const [query, setQuery] = useState("");
+  const [indexReady, setIndexReady] = useState(false);
+  const [query, setQuery] = useState(() =>
+    readUrlSearchQuery(window.location.search),
+  );
   const [selectedNum, setSelectedNum] = useState<number | null>(null);
   const [selected, setSelected] = useState<ComicRecord | null>(null);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -53,6 +57,7 @@ export function App() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
+  const queryRef = useRef(query);
   const requestIdRef = useRef(0);
 
   useEffect(() => {
@@ -67,6 +72,7 @@ export function App() {
 
       if (message.type === "ready") {
         setComicCount(message.count ?? 0);
+        setIndexReady(true);
         return;
       }
 
@@ -82,6 +88,10 @@ export function App() {
           return;
         }
 
+        if (message.id === 0 && queryRef.current.trim()) {
+          return;
+        }
+
         setResults(message.results ?? []);
         if (message.count !== undefined) {
           setComicCount(message.count);
@@ -92,6 +102,9 @@ export function App() {
         const first = message.results?.[0] ?? null;
         if (first) {
           setSelectedNum((current) => current ?? first.num);
+        } else {
+          setSelectedNum(null);
+          setSelected(null);
         }
         return;
       }
@@ -115,7 +128,30 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (!workerRef.current) {
+    queryRef.current = query;
+
+    const nextUrl = buildSearchQueryUrl(window.location.href, query);
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState(null, "", nextUrl);
+    }
+  }, [query]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setQuery(readUrlSearchQuery(window.location.search));
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!workerRef.current || !indexReady) {
       return;
     }
 
@@ -134,7 +170,7 @@ export function App() {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [query]);
+  }, [indexReady, query]);
 
   useEffect(() => {
     if (!selectedNum || !workerRef.current) {
@@ -235,6 +271,14 @@ export function App() {
     "--result-scroll-thumb-size": `${Math.max(18, resultScroll.visibleRatio * 100)}%`,
   } as CSSProperties;
   const selectedTranscript = selected ? getTranscript(selected) : "";
+  const detailEmptyText =
+    comicCount === 0
+      ? "Loading index"
+      : searchBusy
+        ? "Searching"
+        : query.trim()
+          ? "No matching comic"
+          : "Loading index";
 
   return (
     <main className="app-shell">
@@ -377,7 +421,7 @@ export function App() {
               ) : null}
             </>
           ) : (
-            <p className="empty-state">Loading index</p>
+            <p className="empty-state">{detailEmptyText}</p>
           )}
         </article>
       </section>
