@@ -1,5 +1,5 @@
 import type { ComicRecord, SearchResult } from "./types";
-import { buildResultExcerpt } from "./search";
+import { buildResultExcerpt } from "./search.ts";
 
 export interface SemanticIndexFile {
   model: string;

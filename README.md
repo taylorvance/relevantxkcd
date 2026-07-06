@@ -47,9 +47,14 @@ Useful maintenance scripts:
 
 ```sh
 npm run validate:index
+npm run evaluate:search
 npm run update:index
 npm run generate:semantic
 ```
+
+`npm run evaluate:search` prints the current calibration results without
+failing on misses. Add `-- --strict` when a calibration file should gate a
+change.
 
 ## Licensing
 

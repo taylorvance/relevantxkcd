@@ -1,0 +1,49 @@
+{
+  "description": "Seed query set for checking search quality while tuning lexical and semantic ranking.",
+  "defaultWithin": 5,
+  "cases": [
+    {
+      "query": "standards",
+      "intent": "Exact/remembered title query should keep the canonical comic first.",
+      "expectedTop": [927]
+    },
+    {
+      "query": "password strength",
+      "intent": "Exact/remembered title query should keep the canonical comic first.",
+      "expectedTop": [936]
+    },
+    {
+      "query": "correct horse battery staple",
+      "intent": "Visible phrase query should find the password-strength comic.",
+      "expectedTop": [936]
+    },
+    {
+      "query": "compiling",
+      "intent": "Single title/visible-text term should keep the canonical comic first.",
+      "expectedTop": [303]
+    },
+    {
+      "query": "automation",
+      "intent": "Exact title query should keep the canonical comic first.",
+      "expectedTop": [1319]
+    },
+    {
+      "query": "git",
+      "intent": "Exact title query should keep the canonical comic first.",
+      "expectedTop": [1597]
+    },
+    {
+      "query": "dependency graph",
+      "intent": "Concept query should surface both dependency and graph-theory/git-adjacent results.",
+      "expectedTop": [754],
+      "expectedWithin": [1597],
+      "within": 10
+    },
+    {
+      "query": "time saved automation",
+      "intent": "Concept query should keep the time-saved chart and automation comic nearby.",
+      "expectedWithin": [1205, 1319],
+      "within": 10
+    }
+  ]
+}

@@ -13,6 +13,7 @@
     "generate:semantic": "node scripts/build-semantic-index.ts && node scripts/build-index-manifest.ts",
     "update:index": "node scripts/update-public-index.ts",
     "validate:index": "node scripts/validate-public-index.ts",
+    "evaluate:search": "node scripts/evaluate-search.ts",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
