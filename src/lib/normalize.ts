@@ -14,9 +14,11 @@ const WIKI_TEMPLATE_NOISE = new Set([
   "actual citation needed",
   "citation needed",
   "cn",
+  "comic discussion",
   "fact",
   "incomplete",
 ]);
+const WIKI_COMMENT_PATTERN = /<!--[\s\S]*?(?:-->|->>?)/g;
 
 export function normalizeXkcdRecord(
   raw: XkcdRawComic,
@@ -35,9 +37,10 @@ export function normalizeXkcdRecord(
   const imageUrl = String(raw.img || "");
   const canonicalUrl = `https://xkcd.com/${num}/`;
   const explainUrl = `https://www.explainxkcd.com/wiki/index.php/${num}`;
-  const explain = explainRaw ? parseExplainXkcdPage(explainRaw) : null;
+  const hasExplainPage = Boolean(explainRaw?.parse?.wikitext?.["*"]);
+  const explain = hasExplainPage && explainRaw ? parseExplainXkcdPage(explainRaw) : null;
   const communityTranscript = cleanCommunityTranscript(explain?.sections.Transcript ?? "");
-  const sourceFlags = explainRaw ? (["xkcd", "explainxkcd"] as const) : (["xkcd"] as const);
+  const sourceFlags = hasExplainPage ? (["xkcd", "explainxkcd"] as const) : (["xkcd"] as const);
 
   return {
     num,
@@ -167,6 +170,7 @@ function cleanCommunityTranscript(value: unknown): string {
     value
       .replace(/<noinclude>[\s\S]*?<\/noinclude>/gi, " ")
       .replace(/<noinclude>[\s\S]*$/i, " ")
+      .replace(WIKI_COMMENT_PATTERN, " ")
       .replace(/\[\[Category:[^\]]+\]\]/g, " "),
   );
 }

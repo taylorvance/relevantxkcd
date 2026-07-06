@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, open, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { XkcdRawComic } from "../../src/lib/types.ts";
+import type { ExplainXkcdRawPage, XkcdRawComic } from "../../src/lib/types.ts";
 
 export const RAW_DATA_DIR = "raw_data";
 export const XKCD_DIR = path.join(RAW_DATA_DIR, "xkcd");
@@ -175,6 +175,50 @@ export async function fetchCurrentXkcd(): Promise<XkcdRawComic> {
     url: "https://xkcd.com/info.0.json",
     label: "xkcd current",
   });
+}
+
+export async function fetchExplainXkcdPage(
+  num: number,
+  gate: RequestGate,
+): Promise<ExplainXkcdRawPage> {
+  if (!Number.isInteger(num) || num <= 0) {
+    throw new Error(`Invalid explainxkcd comic number ${num}`);
+  }
+
+  const label = `explainxkcd ${num}`;
+  const params = new URLSearchParams({
+    action: "parse",
+    page: String(num),
+    redirects: "1",
+    prop: "wikitext",
+    format: "json",
+  });
+
+  await gate.wait("explainxkcd");
+  const data = await fetchJson<ExplainXkcdRawPage>({
+    url: `https://www.explainxkcd.com/wiki/api.php?${params.toString()}`,
+    label,
+  });
+
+  assertValidExplainXkcdPage(data, label);
+  return data;
+}
+
+export function assertValidExplainXkcdPage(
+  data: ExplainXkcdRawPage,
+  label: string,
+): void {
+  if (data.error) {
+    throw new Error(
+      `${label} returned API error ${data.error.code ?? "unknown"}: ${
+        data.error.info ?? "no details"
+      }`,
+    );
+  }
+
+  if (!data.parse?.wikitext?.["*"]) {
+    throw new Error(`${label} returned no parse wikitext.`);
+  }
 }
 
 export async function fetchJson<T>({ url, label, timeoutMs = 15000 }: FetchJsonOptions): Promise<T> {

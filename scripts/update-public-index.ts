@@ -1,11 +1,12 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 import { normalizeXkcdRecord } from "../src/lib/normalize.ts";
-import type { ComicRecord, ExplainXkcdRawPage, XkcdRawComic } from "../src/lib/types.ts";
+import type { ComicRecord, XkcdRawComic } from "../src/lib/types.ts";
 import {
   DEFAULT_DELAY_MS,
   createRequestGate,
   fetchCurrentXkcd,
+  fetchExplainXkcdPage,
   fetchJson,
   parseArgs,
 } from "./lib/corpus.ts";
@@ -37,7 +38,7 @@ async function main(): Promise<void> {
   for (const num of targets) {
     const previous = recordsByNum.get(num);
     const xkcd = num === currentNum ? current : await fetchXkcd(num, gate);
-    const explain = await fetchExplain(num, xkcd, gate).catch((error) => {
+    const explain = await fetchExplainXkcdPage(num, gate).catch((error) => {
       console.warn(`explainxkcd ${num} skipped: ${formatError(error)}`);
       return null;
     });
@@ -99,26 +100,6 @@ async function fetchXkcd(
   return fetchJson<XkcdRawComic>({
     url: `https://xkcd.com/${num}/info.0.json`,
     label: `xkcd ${num}`,
-  });
-}
-
-async function fetchExplain(
-  num: number,
-  xkcdData: XkcdRawComic,
-  gate: ReturnType<typeof createRequestGate>,
-): Promise<ExplainXkcdRawPage> {
-  const title = String(xkcdData.safe_title ?? xkcdData.title ?? "").replaceAll(" ", "_");
-  const params = new URLSearchParams({
-    action: "parse",
-    page: `${num}:_${title}`,
-    prop: "wikitext",
-    format: "json",
-  });
-
-  await gate.wait("explainxkcd");
-  return fetchJson<ExplainXkcdRawPage>({
-    url: `https://www.explainxkcd.com/wiki/api.php?${params.toString()}`,
-    label: `explainxkcd ${num}`,
   });
 }
 

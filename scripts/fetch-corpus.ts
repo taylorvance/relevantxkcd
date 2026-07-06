@@ -1,5 +1,4 @@
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import {
   buildManifest,
   comicPath,
@@ -9,6 +8,7 @@ import {
   ensureRawDirs,
   EXPLAIN_DIR,
   fetchCurrentXkcd,
+  fetchExplainXkcdPage,
   fetchJson,
   listComicNums,
   parseArgs,
@@ -18,7 +18,7 @@ import {
   writeManifest,
   XKCD_DIR,
 } from "./lib/corpus.ts";
-import type { ExplainXkcdRawPage, XkcdRawComic } from "../src/lib/types.ts";
+import type { XkcdRawComic } from "../src/lib/types.ts";
 
 interface RunCounts {
   fetched: number;
@@ -70,7 +70,6 @@ async function main(): Promise<void> {
 
       const num = targets[index];
       const prefix = `${index + 1}/${targets.length} #${num}`;
-      let xkcdData: XkcdRawComic | null = null;
 
       if (fetchXkcd) {
         const status = await fetchAndStoreXkcd(num, refresh, gate).catch(async (error) => {
@@ -85,20 +84,17 @@ async function main(): Promise<void> {
       }
 
       if (fetchExplain) {
-        xkcdData = await readOrFetchXkcdForExplain(num, refresh, gate);
-        const status = await fetchAndStoreExplain(num, xkcdData, refresh, gate).catch(
-          async (error) => {
-            counts.failed += 1;
-            await logger.log({
-              event: "error",
-              source: "explainxkcd",
-              num,
-              error: formatError(error),
-            });
-            console.log(`${prefix} explain failed`);
-            return "failed" as const;
-          },
-        );
+        const status = await fetchAndStoreExplain(num, refresh, gate).catch(async (error) => {
+          counts.failed += 1;
+          await logger.log({
+            event: "error",
+            source: "explainxkcd",
+            num,
+            error: formatError(error),
+          });
+          console.log(`${prefix} explain failed`);
+          return "failed" as const;
+        });
 
         if (status === "written") counts.fetched += 1;
         if (status === "skipped") counts.skipped += 1;
@@ -138,6 +134,10 @@ async function main(): Promise<void> {
 }
 
 async function resolveTargets(args: Map<string, string | boolean>, upstreamNum: number): Promise<number[]> {
+  if (typeof args.get("nums") === "string") {
+    return parseNums(String(args.get("nums"))).filter((num) => num <= upstreamNum);
+  }
+
   if (typeof args.get("range") === "string") {
     const { start, end } = parseRange(String(args.get("range")));
     return range(start, Math.min(end, upstreamNum));
@@ -163,7 +163,7 @@ async function resolveTargets(args: Map<string, string | boolean>, upstreamNum: 
     return targets;
   }
 
-  throw new Error("Choose one mode: --recent, --missing, or --range START-END.");
+  throw new Error("Choose one mode: --recent, --missing, --range START-END, or --nums N[,N...].");
 }
 
 async function fetchAndStoreXkcd(
@@ -186,24 +186,8 @@ async function fetchAndStoreXkcd(
   return writeJsonIfMissing(filePath, data, refresh);
 }
 
-async function readOrFetchXkcdForExplain(
-  num: number,
-  refresh: boolean,
-  gate: ReturnType<typeof createRequestGate>,
-): Promise<XkcdRawComic> {
-  const filePath = comicPath(XKCD_DIR, num);
-
-  if (existsSync(filePath)) {
-    return readFile(filePath, "utf8").then((content) => JSON.parse(content) as XkcdRawComic);
-  }
-
-  await fetchAndStoreXkcd(num, refresh, gate);
-  return readFile(filePath, "utf8").then((content) => JSON.parse(content) as XkcdRawComic);
-}
-
 async function fetchAndStoreExplain(
   num: number,
-  xkcdData: XkcdRawComic,
   refresh: boolean,
   gate: ReturnType<typeof createRequestGate>,
 ): Promise<"written" | "skipped"> {
@@ -213,19 +197,7 @@ async function fetchAndStoreExplain(
     return "skipped";
   }
 
-  const title = String(xkcdData.safe_title ?? xkcdData.title ?? "").replaceAll(" ", "_");
-  const params = new URLSearchParams({
-    action: "parse",
-    page: `${num}:_${title}`,
-    prop: "wikitext",
-    format: "json",
-  });
-
-  await gate.wait("explainxkcd");
-  const data = await fetchJson<ExplainXkcdRawPage>({
-    url: `https://www.explainxkcd.com/wiki/api.php?${params.toString()}`,
-    label: `explainxkcd ${num}`,
-  });
+  const data = await fetchExplainXkcdPage(num, gate);
 
   return writeJsonIfMissing(filePath, data, refresh);
 }
@@ -240,7 +212,17 @@ function range(start: number, end: number): number[] {
   return nums;
 }
 
+function parseNums(value: string): number[] {
+  const nums = value
+    .split(",")
+    .map((item) => Number.parseInt(item.trim(), 10))
+    .filter((num) => Number.isInteger(num) && num > 0);
+
+  return Array.from(new Set(nums)).sort((a, b) => a - b);
+}
+
 function describeMode(args: Map<string, string | boolean>): string {
+  if (typeof args.get("nums") === "string") return `nums ${args.get("nums")}`;
   if (typeof args.get("range") === "string") return `range ${args.get("range")}`;
   if (args.has("recent")) return "recent";
   if (args.has("missing")) return "missing";
