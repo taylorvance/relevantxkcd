@@ -107,6 +107,30 @@ describe("normalizeXkcdRecord", () => {
     expect(record?.searchText).toContain("A table about time saved.");
   });
 
+  it("preserves unknown transcript templates as visible markup", () => {
+    const record = normalizeXkcdRecord(
+      {
+        num: 99999,
+        title: "Sparse Comic",
+        year: "2026",
+        month: "6",
+        day: "17",
+        img: "https://imgs.xkcd.com/comics/sparse.png",
+      },
+      {
+        parse: {
+          wikitext: {
+            "*": "==Transcript==\n{{incomplete transcript|Don't remove this notice too soon.}}\n:A table about time saved.",
+          },
+        },
+      },
+    );
+
+    expect(record?.communityTranscript).toBe(
+      "{{incomplete transcript|Don't remove this notice too soon.}}\nA table about time saved.",
+    );
+  });
+
   it("does not mark MediaWiki API errors as explainxkcd sources", () => {
     const record = normalizeXkcdRecord(
       {

@@ -156,9 +156,7 @@ function expandWikiTemplate(match: string, content: string): string {
     return `${parts[1]}/${parts[2]}`;
   }
 
-  const payload = parts.slice(1).join(" ");
-
-  return payload || match;
+  return match;
 }
 
 function cleanCommunityTranscript(value: unknown): string {
