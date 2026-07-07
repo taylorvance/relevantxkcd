@@ -16,8 +16,9 @@ under Creative Commons Attribution-NonCommercial 2.5. Some supplemental search
 text may come from explainxkcd, which is generally licensed under Creative
 Commons Attribution-ShareAlike 3.0.
 
-The app links back to canonical xkcd pages, loads comic images from xkcd image
-URLs, and preserves source links for community transcript data when present. See
+The app links back to canonical xkcd pages and corresponding explainxkcd pages,
+loads comic images from xkcd image URLs, and preserves source provenance for
+community transcript data when present. See
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the full third-party
 notice.
 
@@ -27,8 +28,7 @@ notice.
   comic text.
 - Search runs entirely in the browser; there is no app server.
 - Ranked results with comic images, publication dates, and source links.
-- Comic detail view with the canonical xkcd URL ready to copy or open.
-- Links back to xkcd and explainxkcd where applicable.
+- Comic detail view with canonical xkcd and explainxkcd links.
 
 ## Development
 

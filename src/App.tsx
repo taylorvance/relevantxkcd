@@ -384,16 +384,14 @@ export function App() {
                     >
                       Open
                     </a>
-                    {selected.sourceFlags.includes("explainxkcd") ? (
-                      <a
-                        className="open-link"
-                        href={selected.explainUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Explain
-                      </a>
-                    ) : null}
+                    <a
+                      className="open-link"
+                      href={selected.explainUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Explain
+                    </a>
                   </div>
                 </div>
                 <span className="detail-header-spacer" aria-hidden="true" />
