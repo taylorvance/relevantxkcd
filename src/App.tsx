@@ -27,6 +27,18 @@ const MATCH_SOURCE_LABELS: Record<SearchResult["matchSource"], string> = {
   recent: "Recent",
 };
 
+function buildHighDensityImageUrl(imageUrl: string): string | null {
+  const match = imageUrl.match(
+    /^(https:\/\/imgs\.xkcd\.com\/comics\/.+?)(\.png)$/i,
+  );
+
+  if (!match || match[1].endsWith("_2x")) {
+    return null;
+  }
+
+  return `${match[1]}_2x${match[2]}`;
+}
+
 interface WorkerResponse {
   id: number;
   type: "ready" | "results" | "selected" | "status" | "error";
@@ -49,6 +61,12 @@ export function App() {
   const [copied, setCopied] = useState(false);
   const [refineStatus, setRefineStatus] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [highDensityImages, setHighDensityImages] = useState<
+    Record<number, string | null>
+  >({});
+  const [comicImageWidths, setComicImageWidths] = useState<
+    Record<number, number>
+  >({});
   const [resultScroll, setResultScroll] = useState({
     max: 0,
     value: 0,
@@ -59,6 +77,7 @@ export function App() {
   const workerRef = useRef<Worker | null>(null);
   const queryRef = useRef(query);
   const requestIdRef = useRef(0);
+  const selectRequestIdRef = useRef(0);
 
   useEffect(() => {
     const worker = new Worker(new URL("./searchWorker.ts", import.meta.url), {
@@ -102,6 +121,7 @@ export function App() {
         const first = message.results?.[0] ?? null;
         if (first) {
           setSelectedNum((current) => current ?? first.num);
+          setSelected((current) => current ?? first);
         } else {
           setSelectedNum(null);
           setSelected(null);
@@ -110,7 +130,9 @@ export function App() {
       }
 
       if (message.type === "selected") {
-        setSelected(message.selected ?? null);
+        if (message.id === selectRequestIdRef.current) {
+          setSelected(message.selected ?? null);
+        }
         return;
       }
 
@@ -177,12 +199,60 @@ export function App() {
       return;
     }
 
+    const id = selectRequestIdRef.current + 1;
+    selectRequestIdRef.current = id;
+
     workerRef.current.postMessage({
-      id: requestIdRef.current,
+      id,
       type: "select",
       num: selectedNum,
     });
   }, [selectedNum]);
+
+  useEffect(() => {
+    if (!selected || selected.num in highDensityImages) {
+      return;
+    }
+
+    const candidateUrl = buildHighDensityImageUrl(selected.imageUrl);
+
+    if (!candidateUrl) {
+      return;
+    }
+
+    const controller = new AbortController();
+    let isCancelled = false;
+
+    fetch(candidateUrl, {
+      method: "HEAD",
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (isCancelled) {
+          return;
+        }
+
+        setHighDensityImages((current) => ({
+          ...current,
+          [selected.num]: response.ok ? candidateUrl : null,
+        }));
+      })
+      .catch(() => {
+        if (isCancelled) {
+          return;
+        }
+
+        setHighDensityImages((current) => ({
+          ...current,
+          [selected.num]: null,
+        }));
+      });
+
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
+  }, [highDensityImages, selected]);
 
   useEffect(() => {
     const syncResultScroll = () => {
@@ -259,6 +329,11 @@ export function App() {
     syncResultScroll();
   }
 
+  function selectResult(result: SearchResult) {
+    setSelected(result);
+    setSelectedNum(result.num);
+  }
+
   function resultMatchLabel(result: SearchResult): string {
     return (
       MATCH_SOURCE_LABELS[result.matchSource] ??
@@ -279,6 +354,20 @@ export function App() {
         : query.trim()
           ? "No matching comic"
           : "Loading index";
+  const highDensityImageUrl = selected
+    ? highDensityImages[selected.num]
+    : null;
+  const comicImageWidth = selected
+    ? comicImageWidths[selected.num]
+    : undefined;
+  const comicImageSrc =
+    selected && highDensityImageUrl && comicImageWidth !== undefined
+      ? highDensityImageUrl
+      : selected?.imageUrl;
+  const comicImageStyle =
+    comicImageWidth === undefined
+      ? undefined
+      : ({ width: comicImageWidth } as CSSProperties);
 
   return (
     <main className="app-shell">
@@ -331,7 +420,7 @@ export function App() {
               <button
                 className={`result-card ${selected?.num === result.num ? "is-selected" : ""}`}
                 key={result.num}
-                onClick={() => setSelectedNum(result.num)}
+                onClick={() => selectResult(result)}
                 type="button"
               >
                 <span className="result-card-top">
@@ -399,7 +488,22 @@ export function App() {
 
               <div className="comic-frame">
                 <img
-                  src={selected.imageUrl}
+                  key={selected.num}
+                  src={comicImageSrc}
+                  style={comicImageStyle}
+                  onLoad={(event) => {
+                    if (comicImageWidths[selected.num] !== undefined) {
+                      return;
+                    }
+
+                    const naturalWidth = event.currentTarget.naturalWidth;
+
+                    setComicImageWidths((current) =>
+                      current[selected.num] === undefined
+                        ? { ...current, [selected.num]: naturalWidth }
+                        : current,
+                    );
+                  }}
                   alt={selected.alt || selected.title}
                 />
               </div>
