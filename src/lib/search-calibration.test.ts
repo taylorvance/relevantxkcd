@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import calibration from "../../search-calibration.json";
 import publicRecords from "../../public/search-index.json";
-import { searchComics } from "./search";
+import { createSearchIndex, searchComics } from "./search";
 import type { ComicRecord } from "./types";
 
 interface CalibrationCase {
@@ -12,6 +12,7 @@ interface CalibrationCase {
 }
 
 const records = publicRecords as ComicRecord[];
+const searchIndex = createSearchIndex(records);
 const canonicalCases = (calibration.cases as CalibrationCase[]).filter(
   (calibrationCase) => calibrationCase.tier === "canonical",
 );
@@ -25,7 +26,7 @@ describe("canonical search calibration", () => {
     "puts an expected result first for $query",
     ({ query, expectedTop }) => {
       expect(expectedTop?.length).toBeGreaterThan(0);
-      expect(searchComics(records, query)[0]?.num).toSatisfy((num: number) =>
+      expect(searchComics(searchIndex, query)[0]?.num).toSatisfy((num: number) =>
         expectedTop?.includes(num) ?? false,
       );
     },

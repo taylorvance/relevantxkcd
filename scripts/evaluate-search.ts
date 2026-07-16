@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { blendSearchResults, decodeSemanticIndex, rankSemantic } from "../src/lib/semantic.ts";
-import { searchComics } from "../src/lib/search.ts";
+import { createSearchIndex, searchComics, type SearchIndex } from "../src/lib/search.ts";
 import type { SemanticIndexFile } from "../src/lib/semantic.ts";
 import type { ComicRecord, SearchResult } from "../src/lib/types.ts";
 import { SEMANTIC_MODEL_ID } from "./lib/semantic-index.ts";
@@ -44,6 +44,7 @@ async function main(): Promise<void> {
   const options = parseOptions(process.argv.slice(2));
   const calibration = await readJson<CalibrationFile>(options.casesPath);
   const records = await readJson<ComicRecord[]>(options.recordsPath);
+  const searchIndex = createSearchIndex(records);
   const semanticRanker = options.includeSemantic
     ? await createSemanticRanker(options.semanticPath)
     : null;
@@ -60,6 +61,7 @@ async function main(): Promise<void> {
   for (const calibrationCase of calibration.cases) {
     const results = await evaluateCase(
       records,
+      searchIndex,
       calibrationCase,
       calibration.defaultWithin ?? options.limit,
       options.limit,
@@ -89,6 +91,7 @@ async function main(): Promise<void> {
 
 async function evaluateCase(
   records: ComicRecord[],
+  searchIndex: SearchIndex,
   calibrationCase: CalibrationCase,
   defaultWithin: number,
   limit: number,
@@ -100,7 +103,7 @@ async function evaluateCase(
   withinPass: boolean;
   within: number;
 }> {
-  const lexicalResults = searchComics(records, calibrationCase.query, limit);
+  const lexicalResults = searchComics(searchIndex, calibrationCase.query, limit);
   const semanticResults = semanticRanker
     ? await semanticRanker.rank(calibrationCase.query)
     : [];

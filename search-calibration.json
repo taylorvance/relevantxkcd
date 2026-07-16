@@ -38,6 +38,13 @@
       "tier": "canonical"
     },
     {
+      "query": "velociraptor what could go wrong",
+      "intent": "Remembered paraphrase query should eventually find the goto raptor comic despite wording drift.",
+      "expectedWithin": [292],
+      "within": 24,
+      "tier": "calibration"
+    },
+    {
       "query": "compiling",
       "intent": "Single title/visible-text term should keep the canonical comic first.",
       "expectedTop": [303]

@@ -1,5 +1,5 @@
 import { blendSearchResults, decodeSemanticIndex, rankSemantic } from "./lib/semantic";
-import { buildResultExcerpt, searchComics } from "./lib/search";
+import { buildResultExcerpt, createSearchIndex, searchComics, type SearchIndex } from "./lib/search";
 import { embedQuery, loadSemanticIndex } from "./lib/semanticModel";
 import { isSupportedIndexManifest, type IndexManifestFile } from "./lib/indexManifest";
 import type { ComicRecord, SearchResult } from "./lib/types";
@@ -33,6 +33,7 @@ interface WorkerResponse {
 
 let records: ComicRecord[] = [];
 let recordsByNum = new Map<number, ComicRecord>();
+let searchIndex: SearchIndex | null = null;
 let indexManifest: IndexManifestFile | null = null;
 let latestSearchId = 0;
 let semanticIndexLoaded = false;
@@ -69,6 +70,7 @@ async function loadRecords(): Promise<void> {
   records = loaded.records;
   indexManifest = loaded.manifest;
   recordsByNum = new Map(records.map((record) => [record.num, record]));
+  searchIndex = createSearchIndex(records);
   post({ id: 0, type: "ready", count: records.length });
   post({
     id: 0,
@@ -79,12 +81,12 @@ async function loadRecords(): Promise<void> {
 }
 
 async function search(message: SearchRequest): Promise<void> {
-  if (records.length === 0) {
+  if (records.length === 0 || !searchIndex) {
     return;
   }
 
   const trimmedQuery = message.query.trim();
-  const lexicalResults = trimmedQuery ? searchComics(records, trimmedQuery, RESULT_LIMIT) : recentRecords();
+  const lexicalResults = trimmedQuery ? searchComics(searchIndex, trimmedQuery, RESULT_LIMIT) : recentRecords();
   const semanticUrl = getSemanticIndexUrl();
 
   if (!trimmedQuery || !semanticUrl || semanticUnavailable) {

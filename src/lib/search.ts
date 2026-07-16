@@ -24,8 +24,48 @@ const FIELD_WEIGHTS = {
   phraseCommunityTranscriptSupplemental: 50,
 };
 
+interface RecordTokenIndex {
+  title: Set<string>;
+  alt: Set<string>;
+  transcript: Set<string>;
+  communityTranscript: Set<string>;
+}
+
+interface NormalizedRecordFields {
+  title: string;
+  alt: string;
+  transcript: string;
+  communityTranscript: string;
+}
+
+interface IndexedRecord {
+  record: ComicRecord;
+  fields: NormalizedRecordFields;
+  tokens: RecordTokenIndex;
+  hasOfficialTranscript: boolean;
+}
+
+export interface SearchIndex {
+  records: ComicRecord[];
+  recordCount: number;
+  indexedRecords: IndexedRecord[];
+  rowsByNum: Map<number, number>;
+  postings: Map<string, Set<number>>;
+  documentFrequencies: Map<string, number>;
+}
+
+interface ScoredIndexedRecord {
+  indexedRecord: IndexedRecord;
+  score: number;
+  matchedFields: Set<string>;
+}
+
+const IDF_BASELINE = 0.5;
+const IDF_SCALE = 0.5;
+const searchIndexCache = new WeakMap<ComicRecord[], SearchIndex>();
+
 export function searchComics(
-  records: ComicRecord[],
+  source: ComicRecord[] | SearchIndex,
   query: string,
   limit = 20,
 ): SearchResult[] {
@@ -35,11 +75,67 @@ export function searchComics(
     return [];
   }
 
-  return records
-    .map((record) => scoreRecord(record, parsed))
+  const index = Array.isArray(source) ? createSearchIndex(source) : source;
+  const candidateRows = candidateRowsForQuery(index, parsed);
+
+  return Array.from(candidateRows)
+    .map((row) => scoreIndexedRecord(index.indexedRecords[row], parsed, index))
     .filter((result) => result.score > 0)
-    .sort((a, b) => b.score - a.score || a.num - b.num)
-    .slice(0, limit);
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        a.indexedRecord.record.num - b.indexedRecord.record.num,
+    )
+    .slice(0, limit)
+    .map((result) => buildSearchResult(result, parsed));
+}
+
+export function createSearchIndex(records: ComicRecord[]): SearchIndex {
+  const cached = searchIndexCache.get(records);
+
+  if (cached) {
+    return cached;
+  }
+
+  const index: SearchIndex = {
+    records,
+    recordCount: records.length,
+    indexedRecords: [],
+    rowsByNum: new Map(),
+    postings: new Map(),
+    documentFrequencies: new Map(),
+  };
+
+  records.forEach((record, row) => {
+    const indexedRecord = buildIndexedRecord(record);
+    const documentTokens = new Set([
+      ...indexedRecord.tokens.title,
+      ...indexedRecord.tokens.alt,
+      ...indexedRecord.tokens.transcript,
+      ...indexedRecord.tokens.communityTranscript,
+    ]);
+
+    index.indexedRecords.push(indexedRecord);
+    index.rowsByNum.set(record.num, row);
+
+    for (const token of documentTokens) {
+      let postings = index.postings.get(token);
+
+      if (!postings) {
+        postings = new Set();
+        index.postings.set(token, postings);
+      }
+
+      postings.add(row);
+      index.documentFrequencies.set(
+        token,
+        (index.documentFrequencies.get(token) ?? 0) + 1,
+      );
+    }
+  });
+
+  searchIndexCache.set(records, index);
+  return index;
 }
 
 export function parseQuery(query: string): {
@@ -53,7 +149,7 @@ export function parseQuery(query: string): {
     normalizeForComparison(match[1]),
   ).filter(Boolean);
   const normalized = normalizeForComparison(query.replace(/"[^"]+"/g, " "));
-  const tokens = unique(tokenize(normalized));
+  const tokens = unique(tokenizeNormalized(normalized));
   const implicitPhrases = tokens.length > 1 && normalized ? [normalized] : [];
   const phrases = unique([...quotedPhrases, ...implicitPhrases]);
 
@@ -61,27 +157,21 @@ export function parseQuery(query: string): {
 }
 
 export function tokenize(value: string): string[] {
-  return normalizeForComparison(value)
-    .match(/[a-z0-9]+/g)
-    ?.map(stemToken) ?? [];
+  return tokenizeNormalized(normalizeForComparison(value));
 }
 
-function scoreRecord(
-  record: ComicRecord,
+function tokenizeNormalized(value: string): string[] {
+  return value.match(/[a-z0-9]+/g)?.map(stemToken) ?? [];
+}
+
+function scoreIndexedRecord(
+  indexedRecord: IndexedRecord,
   query: ReturnType<typeof parseQuery>,
-): SearchResult {
-  const fields = {
-    title: normalizeForComparison(record.title),
-    alt: normalizeForComparison(record.alt),
-    transcript: normalizeForComparison(record.transcript),
-    communityTranscript: normalizeForComparison(record.communityTranscript),
-  };
-  const titleTokens = new Set(tokenize(record.title));
-  const altTokens = new Set(tokenize(record.alt));
-  const transcriptTokens = new Set(tokenize(record.transcript));
-  const communityTranscriptTokens = new Set(tokenize(record.communityTranscript));
-  const hasOfficialTranscript = record.transcript.trim().length > 0;
+  index: SearchIndex,
+): ScoredIndexedRecord {
+  const { fields, tokens: recordTokens, hasOfficialTranscript, record } = indexedRecord;
   const matchedFields = new Set<string>();
+  const uniqueHits = new Set<string>();
   let score = 0;
 
   if (query.comicNumber === record.num) {
@@ -118,31 +208,33 @@ function scoreRecord(
     }
   }
 
-  const uniqueHits = new Set<string>();
-
   for (const token of query.tokens) {
-    if (titleTokens.has(token)) {
-      score += FIELD_WEIGHTS.title;
+    const tokenWeight = tokenRarityMultiplier(index, token);
+
+    if (recordTokens.title.has(token)) {
+      score += FIELD_WEIGHTS.title * tokenWeight;
       matchedFields.add("title");
       uniqueHits.add(token);
     }
 
-    if (altTokens.has(token)) {
-      score += FIELD_WEIGHTS.alt;
+    if (recordTokens.alt.has(token)) {
+      score += FIELD_WEIGHTS.alt * tokenWeight;
       matchedFields.add("alt");
       uniqueHits.add(token);
     }
 
-    if (transcriptTokens.has(token)) {
-      score += FIELD_WEIGHTS.transcript;
+    if (recordTokens.transcript.has(token)) {
+      score += FIELD_WEIGHTS.transcript * tokenWeight;
       matchedFields.add("transcript");
       uniqueHits.add(token);
     }
 
-    if (communityTranscriptTokens.has(token)) {
-      score += hasOfficialTranscript
+    if (recordTokens.communityTranscript.has(token)) {
+      const fieldWeight = hasOfficialTranscript
         ? FIELD_WEIGHTS.communityTranscriptSupplemental
         : FIELD_WEIGHTS.communityTranscript;
+
+      score += fieldWeight * tokenWeight;
       matchedFields.add("communityTranscript");
       uniqueHits.add(token);
     }
@@ -156,19 +248,151 @@ function scoreRecord(
     score += 60;
   }
 
-  const matchSource = pickMatchSource(matchedFields);
+  return {
+    indexedRecord,
+    score,
+    matchedFields,
+  };
+}
+
+function buildSearchResult(
+  result: ScoredIndexedRecord,
+  query: ReturnType<typeof parseQuery>,
+): SearchResult {
+  const matchSource = pickMatchSource(result.matchedFields);
+  const record = result.indexedRecord.record;
 
   return {
     ...record,
-    score,
+    score: result.score,
     ...buildResultExcerpt(
       record,
       unique([...query.tokens, ...query.phrases.flatMap(tokenize)]),
       matchSource,
     ),
     matchSource,
-    matchedFields: Array.from(matchedFields),
+    matchedFields: Array.from(result.matchedFields),
   };
+}
+
+function candidateRowsForQuery(
+  index: SearchIndex,
+  query: ReturnType<typeof parseQuery>,
+): Set<number> {
+  const candidateRows = new Set<number>();
+  const comicRow =
+    query.comicNumber === null ? undefined : index.rowsByNum.get(query.comicNumber);
+
+  if (comicRow !== undefined) {
+    candidateRows.add(comicRow);
+  }
+
+  for (const token of query.tokens) {
+    addPostingRows(candidateRows, index.postings.get(token));
+  }
+
+  for (const phrase of query.phrases) {
+    addPhraseCandidateRows(candidateRows, index, phrase);
+  }
+
+  return candidateRows;
+}
+
+function addPostingRows(candidateRows: Set<number>, postings?: Set<number>): void {
+  if (!postings) {
+    return;
+  }
+
+  for (const row of postings) {
+    candidateRows.add(row);
+  }
+}
+
+function addPhraseCandidateRows(
+  candidateRows: Set<number>,
+  index: SearchIndex,
+  phrase: string,
+): void {
+  const phraseTokens = tokenizeNormalized(phrase);
+  const candidatePostings = rarestPosting(index, phraseTokens);
+  const rowsToCheck =
+    candidatePostings ?? index.indexedRecords.map((_record, row) => row);
+
+  for (const row of rowsToCheck) {
+    const { fields } = index.indexedRecords[row];
+
+    if (
+      fields.title.includes(phrase) ||
+      fields.alt.includes(phrase) ||
+      fields.transcript.includes(phrase) ||
+      fields.communityTranscript.includes(phrase)
+    ) {
+      candidateRows.add(row);
+    }
+  }
+}
+
+function rarestPosting(
+  index: SearchIndex,
+  tokens: string[],
+): Set<number> | undefined {
+  let rarest: Set<number> | undefined;
+
+  for (const token of tokens) {
+    const postings = index.postings.get(token);
+
+    if (!postings) {
+      return new Set();
+    }
+
+    if (!rarest || postings.size < rarest.size) {
+      rarest = postings;
+    }
+  }
+
+  return rarest;
+}
+
+function buildIndexedRecord(record: ComicRecord): IndexedRecord {
+  const fields = {
+    title: normalizeForComparison(record.title),
+    alt: normalizeForComparison(record.alt),
+    transcript: normalizeForComparison(record.transcript),
+    communityTranscript: normalizeForComparison(record.communityTranscript),
+  };
+
+  return {
+    record,
+    fields,
+    tokens: buildRecordTokenIndex(fields),
+    hasOfficialTranscript: record.transcript.trim().length > 0,
+  };
+}
+
+function buildRecordTokenIndex(fields: NormalizedRecordFields): RecordTokenIndex {
+  return {
+    title: new Set(tokenizeNormalized(fields.title)),
+    alt: new Set(tokenizeNormalized(fields.alt)),
+    transcript: new Set(tokenizeNormalized(fields.transcript)),
+    communityTranscript: new Set(tokenizeNormalized(fields.communityTranscript)),
+  };
+}
+
+function tokenRarityMultiplier(
+  index: SearchIndex,
+  token: string,
+): number {
+  const documentFrequency = index.documentFrequencies.get(token) ?? 0;
+
+  return (
+    IDF_BASELINE +
+    Math.log(
+      1 +
+        (index.recordCount - documentFrequency + 0.5) /
+          (documentFrequency + 0.5),
+    ) *
+      IDF_SCALE
+  );
 }
 
 function pickMatchSource(matchedFields: Set<string>): MatchSource {

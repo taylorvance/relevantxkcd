@@ -8,7 +8,12 @@ import comic1205 from "../../fixtures/xkcd/1205.json";
 import comic1319 from "../../fixtures/xkcd/1319.json";
 import comic1597 from "../../fixtures/xkcd/1597.json";
 import { normalizeXkcdRecord } from "./normalize";
-import { buildResultExcerpt, searchComics, tokenize } from "./search";
+import {
+  buildResultExcerpt,
+  createSearchIndex,
+  searchComics,
+  tokenize,
+} from "./search";
 import type { ComicRecord } from "./types";
 
 const records = [
@@ -46,6 +51,16 @@ describe("searchComics", () => {
 
     expect(results[0]?.num).toBe(754);
     expect(results.map((result) => result.num)).toContain(1597);
+  });
+
+  it("supports a prebuilt search index", () => {
+    const query = "dependency graph";
+    const indexedResults = searchComics(createSearchIndex(records), query);
+    const arrayResults = searchComics(records, query);
+
+    expect(indexedResults.map((result) => result.num)).toEqual(
+      arrayResults.map((result) => result.num),
+    );
   });
 
   it("supports quoted phrase matching", () => {
