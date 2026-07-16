@@ -1,4 +1,5 @@
 name: Update index
+run-name: ${{ github.event_name == 'schedule' && 'Scheduled index probe' || 'Manual index probe' }}
 
 on:
   schedule:
@@ -6,6 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pages: write
   id-token: write
@@ -18,7 +20,8 @@ jobs:
   update:
     runs-on: ubuntu-latest
     outputs:
-      changed: ${{ steps.search.outputs.changed }}
+      changed: ${{ steps.outcome.outputs.changed }}
+      hit_type: ${{ steps.outcome.outputs.hit_type }}
 
     steps:
       - name: Check out repository
@@ -48,19 +51,92 @@ jobs:
           fi
 
       - name: Refresh public search index
-        run: npm run update:index -- --recent-count=10
+        id: refresh
+        continue-on-error: true
+        run: npm run update:index -- --recent-count=10 --summary-json "$RUNNER_TEMP/relevantxkcd/update-summary.json"
 
-      - name: Check for search index changes
-        id: search
+      - name: Classify update outcome
+        id: outcome
+        if: always()
+        env:
+          REFRESH_OUTCOME: ${{ steps.refresh.outcome }}
+          UPDATE_SUMMARY_JSON: ${{ runner.temp }}/relevantxkcd/update-summary.json
         run: |
-          if git diff --quiet -- public/search-index.json; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+          node -e '
+            const fs = require("node:fs");
+            const outputPath = process.env.GITHUB_OUTPUT;
+            const stepSummaryPath = process.env.GITHUB_STEP_SUMMARY;
+            const summaryPath = process.env.UPDATE_SUMMARY_JSON;
+            const refreshOutcome = process.env.REFRESH_OUTCOME;
+
+            function output(name, value) {
+              fs.appendFileSync(outputPath, `${name}=${value}\n`);
+            }
+
+            function table(rows) {
+              return [
+                "| Field | Value |",
+                "| --- | --- |",
+                ...rows.map(([key, value]) => `| ${key} | ${value} |`),
+              ].join("\n");
+            }
+
+            if (refreshOutcome !== "success") {
+              output("changed", "false");
+              output("hit_type", "error");
+              fs.appendFileSync(
+                stepSummaryPath,
+                [
+                  "### ❌ Index update error",
+                  "",
+                  table([
+                    ["Outcome", "error"],
+                    ["Refresh step", refreshOutcome],
+                    ["Changed", "false"],
+                  ]),
+                  "",
+                ].join("\n"),
+              );
+              process.exit(1);
+            }
+
+            const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
+            output("changed", String(summary.changed));
+            output("hit_type", summary.hitType);
+
+            const title = summary.changed ? "### 🎯 Index update hit" : "### ○ Index update miss";
+            const recentChanges = summary.changes
+              .slice(0, 8)
+              .map((change) => `- ${change.type} #${change.num} ${change.title}`)
+              .join("\n");
+
+            fs.appendFileSync(
+              stepSummaryPath,
+              [
+                title,
+                "",
+                table([
+                  ["Outcome", summary.hitType],
+                  ["Current xkcd", `#${summary.currentNum}`],
+                  ["Targets checked", summary.targetCount],
+                  ["Added", summary.added],
+                  ["Updated", summary.updated],
+                  ["Unchanged", summary.unchanged],
+                  ["Skipped", summary.skipped],
+                ]),
+                recentChanges ? `\n${recentChanges}\n` : "",
+              ].join("\n"),
+            );
+          '
+
+      - name: Mark scheduled miss as cancelled
+        if: github.event_name == 'schedule' && steps.outcome.outputs.hit_type == 'miss'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/cancel"
 
       - name: Rebuild semantic index and manifest
-        if: steps.search.outputs.changed == 'true'
+        if: steps.outcome.outputs.changed == 'true'
         run: |
           node scripts/build-semantic-index.ts \
             --previous-records "$RUNNER_TEMP/relevantxkcd/search-index.previous.json" \
@@ -68,15 +144,15 @@ jobs:
           npm run generate:manifest
 
       - name: Validate generated indexes
-        if: steps.search.outputs.changed == 'true'
+        if: steps.outcome.outputs.changed == 'true'
         run: npm run validate:index -- --require-semantic
 
       - name: Verify app
-        if: steps.search.outputs.changed == 'true'
+        if: steps.outcome.outputs.changed == 'true'
         run: npm run verify
 
       - name: Commit generated indexes
-        if: steps.search.outputs.changed == 'true'
+        if: steps.outcome.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -85,11 +161,11 @@ jobs:
           git push
 
       - name: Configure Pages
-        if: steps.search.outputs.changed == 'true'
+        if: steps.outcome.outputs.changed == 'true'
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
-        if: steps.search.outputs.changed == 'true'
+        if: steps.outcome.outputs.changed == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
