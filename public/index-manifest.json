@@ -1,25 +1,25 @@
 {
   "schema": "index-manifest@1",
-  "buildId": "20260722T194311-3275-a5c64b38",
-  "generatedAt": "2026-07-22T19:43:11.968Z",
+  "buildId": "20260723T034426-3275-cdb5c782",
+  "generatedAt": "2026-07-23T03:44:26.424Z",
   "corpus": {
     "latestNum": 3275,
     "recordCount": 3274,
-    "contentHash": "sha256-a5c64b38cd0b36ef9984f128dfc042a5b0048102b2e90beb77ff9e8c7b4056e3",
+    "contentHash": "sha256-cdb5c78279c30b78337707eeb325317468df14e27c62ad730217b78d372f7664",
     "numsHash": "sha256-258f498269d02a0d6c83fd42e5b79837ef4618be74cddddc06df8dca11ad9c76"
   },
   "assets": {
     "search": {
       "schema": "comic-record-array@1",
       "url": "/search-index.json",
-      "sha256": "sha256-a5c64b38cd0b36ef9984f128dfc042a5b0048102b2e90beb77ff9e8c7b4056e3",
-      "bytes": 6000767,
+      "sha256": "sha256-cdb5c78279c30b78337707eeb325317468df14e27c62ad730217b78d372f7664",
+      "bytes": 6000791,
       "recordCount": 3274
     },
     "semantic": {
       "schema": "semantic-index@1",
       "url": "/semantic-index.json",
-      "sha256": "sha256-f6c77ebfb9d315a2a7d36b19beb50d47b4106efe291059527cb52f8d669d4f87",
+      "sha256": "sha256-64a945936e34d958881a895b93ae51f3bd55359ccf182a21382a12f2fd32c525",
       "bytes": 1933933,
       "recordCount": 3274,
       "numsHash": "sha256-258f498269d02a0d6c83fd42e5b79837ef4618be74cddddc06df8dca11ad9c76",
