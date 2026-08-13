@@ -468,16 +468,12 @@ export function App() {
                     <a
                       className="open-link"
                       href={selected.canonicalUrl}
-                      target="_blank"
-                      rel="noreferrer"
                     >
                       Open
                     </a>
                     <a
                       className="open-link"
                       href={selected.explainUrl}
-                      target="_blank"
-                      rel="noreferrer"
                     >
                       Explain
                     </a>
@@ -529,52 +525,45 @@ export function App() {
       </section>
 
       <footer className="attribution">
-        <div className="footer-links">
+        <div className="footer-links" aria-label="Project links">
           <SourceBadge
             aria-label="Open Relevant xkcd source repository on GitHub"
             className="source-badge"
             href="https://github.com/taylorvance/relevantxkcd"
             iconClassName="source-badge-icon"
             labelClassName="source-badge-label"
+            title="Source"
+            target="_self"
             unstyled
           />
           <BrandBadge
+            aria-label="Open taylorvance programs"
             className="brand-badge"
             iconClassName="brand-badge-icon"
             labelClassName="brand-badge-label"
+            title="taylorvance programs"
+            target="_self"
             unstyled
           />
         </div>
         <span>
           Unofficial, noncommercial tool.{" "}
-          <a href="https://xkcd.com/" target="_blank" rel="noreferrer">
+          <a href="https://xkcd.com/">
             xkcd
           </a>{" "}
           content is by Randall Munroe and licensed under{" "}
-          <a
-            href="https://creativecommons.org/licenses/by-nc/2.5/"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a href="https://creativecommons.org/licenses/by-nc/2.5/">
             CC BY-NC 2.5
           </a>
           .
         </span>{" "}
         <span>
           Search may also use{" "}
-          <a
-            href="https://www.explainxkcd.com/wiki/"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a href="https://www.explainxkcd.com/wiki/">
             explainxkcd
           </a>{" "}
           transcript text under{" "}
-          <a
-            href="https://creativecommons.org/licenses/by-sa/3.0/"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a href="https://creativecommons.org/licenses/by-sa/3.0/">
             CC BY-SA 3.0
           </a>
           , with source links on matched comics.
