@@ -42,7 +42,8 @@ MVP UI:
 - ranked result list
 - selected comic detail view
 - comic image loaded from xkcd remote image URL
-- title, comic number, alt text, and canonical link
+- title, comic number, ISO publication date, alt text, and canonical link
+- publication date beside the number on result cards and beneath it in comic view
 - copy-link button
 - clear attribution/source note
 

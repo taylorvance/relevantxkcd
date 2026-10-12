@@ -251,6 +251,21 @@ h2 {
   justify-content: space-between;
   gap: 8px;
   min-width: 0;
+  flex-wrap: wrap;
+}
+
+.result-identity {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: #6e7b91;
+}
+
+.comic-date {
+  color: #6e7b91;
+  font-size: 0.75rem;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 .result-card:hover,
@@ -299,13 +314,15 @@ h2 {
 
 .detail-header {
   display: grid;
-  grid-template-columns: minmax(48px, 76px) minmax(0, 1fr) minmax(48px, 76px);
+  grid-template-columns: 76px minmax(0, 1fr) 76px;
   align-items: start;
   gap: 10px;
   margin-bottom: 3px;
 }
 
 .detail-number {
+  display: grid;
+  gap: 4px;
   justify-self: start;
   padding-top: 4px;
 }
@@ -587,10 +604,6 @@ h2 {
 
   .result-excerpt {
     -webkit-line-clamp: 3;
-  }
-
-  .detail-header {
-    grid-template-columns: minmax(38px, 52px) minmax(0, 1fr) minmax(38px, 52px);
   }
 
   .detail-actions {

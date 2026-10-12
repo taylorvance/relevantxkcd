@@ -424,7 +424,17 @@ export function App() {
                 type="button"
               >
                 <span className="result-card-top">
-                  <span className="result-meta">#{result.num}</span>
+                  <span className="result-identity">
+                    <span className="result-meta">#{result.num}</span>
+                    {result.published ? (
+                      <>
+                        <span aria-hidden="true">·</span>
+                        <time className="comic-date" dateTime={result.published}>
+                          {result.published}
+                        </time>
+                      </>
+                    ) : null}
+                  </span>
                   <span className="result-source">
                     {resultMatchLabel(result)}
                   </span>
@@ -454,7 +464,14 @@ export function App() {
           {selected ? (
             <>
               <div className="detail-header">
-                <p className="detail-number result-meta">#{selected.num}</p>
+                <p className="detail-number result-meta">
+                  #{selected.num}
+                  {selected.published ? (
+                    <time className="comic-date" dateTime={selected.published}>
+                      {selected.published}
+                    </time>
+                  ) : null}
+                </p>
                 <div className="detail-heading">
                   <h2>{selected.title}</h2>
                   <div className="detail-actions">
