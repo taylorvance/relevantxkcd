@@ -17,6 +17,14 @@ interface CalibrationFile {
   description?: string;
   defaultWithin?: number;
   cases: CalibrationCase[];
+  observations?: SearchObservation[];
+}
+
+interface SearchObservation {
+  query: string;
+  comicInMind?: number;
+  date?: string;
+  notes: string;
 }
 
 interface CalibrationCase {
@@ -75,6 +83,15 @@ async function main(): Promise<void> {
     printCase(calibrationCase, results, options.limit);
   }
 
+  for (const observation of calibration.observations ?? []) {
+    console.log(`UNASSESSED ${JSON.stringify(observation.query)}`);
+    if (observation.comicInMind !== undefined) {
+      console.log(`  Comic in mind: #${observation.comicInMind}`);
+    }
+    console.log(`  ${observation.date ? `${observation.date}: ` : ""}${observation.notes}`);
+    console.log("");
+  }
+
   if (failures > 0) {
     const message = `${failures} calibration case${failures === 1 ? "" : "s"} need attention.`;
 
@@ -85,7 +102,11 @@ async function main(): Promise<void> {
       console.log(message);
     }
   } else {
-    console.log("All calibration cases passed.");
+    console.log("All calibration assertions passed.");
+  }
+  const observationCount = calibration.observations?.length ?? 0;
+  if (observationCount > 0) {
+    console.log(`${observationCount} unassessed observation${observationCount === 1 ? "" : "s"} (excluded from pass/fail).`);
   }
 }
 

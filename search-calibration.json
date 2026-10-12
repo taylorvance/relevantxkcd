@@ -1,6 +1,20 @@
 {
-  "description": "Seed query set for checking search quality while tuning lexical and semantic ranking.",
+  "description": "Search quality assertions and unassessed user observations.",
   "defaultWithin": 5,
+  "observations": [
+    {
+      "query": "p hacking",
+      "comicInMind": 882,
+      "date": "2026-10-08",
+      "notes": "User could not find Significant. Query suitability, remembered target, and desired ranking have not been adjudicated."
+    },
+    {
+      "query": "p value",
+      "comicInMind": 882,
+      "date": "2026-10-08",
+      "notes": "User could not find Significant. Query suitability, remembered target, and desired ranking have not been adjudicated."
+    }
+  ],
   "cases": [
     {
       "query": "standards",

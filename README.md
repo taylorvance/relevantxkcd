@@ -56,6 +56,13 @@ npm run generate:semantic
 failing on misses. Add `-- --strict` when a calibration file should gate a
 change.
 
+`search-calibration.json` keeps assertions in `cases` and experiential reports
+in `observations`. Record an observation's original `query`, optional
+`comicInMind` and `date`, and `notes` about what happened or remains uncertain.
+Observations appear as `UNASSESSED` and never affect pass/fail, even with
+`--strict`. Add ranking expectations to `cases` only after deciding they are
+justified; a reported miss alone is not a search requirement.
+
 ## Licensing
 
 Original project code is MIT licensed. See [LICENSE.md](LICENSE.md).
