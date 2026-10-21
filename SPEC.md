@@ -225,9 +225,7 @@ Merge model TODOs:
 
 ```ts
 finalScore =
-  lexicalNormalized * 0.55 +
-  semanticNormalized * 0.35 +
-  overlapBonus * 0.10
+  lexicalNormalized * 0.55 + semanticNormalized * 0.35 + overlapBonus * 0.1;
 ```
 
 This formula is a starting hypothesis, not a committed tuning decision.

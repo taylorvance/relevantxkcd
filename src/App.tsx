@@ -5,6 +5,7 @@ import {
 } from "@taylorvance/tv-shared-web";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
+import { LastChecked } from "./LastChecked";
 
 import { getTranscript } from "./lib/transcript";
 import type { ComicRecord, SearchResult } from "./lib/types";
@@ -589,6 +590,7 @@ export function App() {
           Comic images load from xkcd image URLs. This is an independent project
           and is not affiliated with xkcd or explainxkcd.
         </span>
+        <LastChecked />
       </footer>
     </main>
   );

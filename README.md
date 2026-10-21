@@ -29,6 +29,11 @@ notice.
 - Search runs entirely in the browser; there is no app server.
 - Ranked results with comic images, publication dates, and source links.
 - Comic detail view with canonical xkcd and explainxkcd links.
+- Quiet footer timestamps show the last deployed index update and successful
+  check from GitHub Actions, including no-change checks. Each looks through up
+  to three recent qualifying runs and is hidden if unavailable.
+  Status is cached across tabs in localStorage for
+  15 minutes and hidden if unavailable; no timestamp commits are generated.
 
 ## Development
 

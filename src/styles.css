@@ -500,6 +500,18 @@ h2 {
   text-underline-offset: 2px;
 }
 
+.attribution .last-checked {
+  display: block;
+  margin-top: 7px;
+}
+
+.attribution .last-checked a {
+  color: #666666;
+  font-size: 0.78rem;
+  font-weight: 400;
+  text-decoration: none;
+}
+
 .attribution .source-badge,
 .attribution .brand-badge {
   color: #ffffff;
