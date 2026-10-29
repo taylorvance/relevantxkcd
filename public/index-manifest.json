@@ -1,28 +1,28 @@
 {
   "schema": "index-manifest@1",
-  "buildId": "20261027T180018-3316-aeacd34e",
-  "generatedAt": "2026-10-27T18:00:18.395Z",
+  "buildId": "20261029T054646-3317-2a64101b",
+  "generatedAt": "2026-10-29T05:46:46.998Z",
   "corpus": {
-    "latestNum": 3316,
-    "recordCount": 3315,
-    "contentHash": "sha256-aeacd34ee5b3df459ee845ab2f17458641ac34b6c07a4663293b5e1c79dc12b8",
-    "numsHash": "sha256-6a353d8d53eb70e2d404a376fb5f0914ff9828cc00d5faa2d7c97eeb33756678"
+    "latestNum": 3317,
+    "recordCount": 3316,
+    "contentHash": "sha256-2a64101b677f4388c486284b7a8cc1da71f10e92f2db2a2b1ff758a4c5dcca78",
+    "numsHash": "sha256-d2beb8afb2b2197274e0bf36033f1953b41d4526e4a980caaa7ca4ed1e1d4dfb"
   },
   "assets": {
     "search": {
       "schema": "comic-record-array@1",
       "url": "/search-index.json",
-      "sha256": "sha256-aeacd34ee5b3df459ee845ab2f17458641ac34b6c07a4663293b5e1c79dc12b8",
-      "bytes": 6052572,
-      "recordCount": 3315
+      "sha256": "sha256-2a64101b677f4388c486284b7a8cc1da71f10e92f2db2a2b1ff758a4c5dcca78",
+      "bytes": 6053455,
+      "recordCount": 3316
     },
     "semantic": {
       "schema": "semantic-index@1",
       "url": "/semantic-index.json",
-      "sha256": "sha256-d701f4391156b1c18300ce786cce60ed5f68fe25b90b98fe1e38c19ad17ae168",
-      "bytes": 1958164,
-      "recordCount": 3315,
-      "numsHash": "sha256-6a353d8d53eb70e2d404a376fb5f0914ff9828cc00d5faa2d7c97eeb33756678",
+      "sha256": "sha256-29def7ebd87154a3f3b6806a5853da5af296771650f58896a62173cfb3beb489",
+      "bytes": 1958755,
+      "recordCount": 3316,
+      "numsHash": "sha256-d2beb8afb2b2197274e0bf36033f1953b41d4526e4a980caaa7ca4ed1e1d4dfb",
       "model": "Xenova/all-MiniLM-L6-v2",
       "dimensions": 384,
       "scale": 127
